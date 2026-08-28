@@ -4,7 +4,7 @@
 엔지니어링 규율 스킬들이 별도 지시 없이 적절한 시점에 걸리도록 `orchestration`을
 커스터마이징해 두었다.
 
-**Orca 소스는 수정하지 않는다.** 이 폴더만 설치하면 동작한다.
+**Orca 소스는 수정하지 않는다.** 이 저장소의 `skills/` 아래 폴더들을 복사만 하면 동작한다.
 
 ## 구성
 
@@ -16,42 +16,80 @@ skills/
   test-driven-development/        구현 전 실패 테스트
   systematic-debugging/           수정 제안 전 근본 원인 추적
   verification-before-completion/ 완료 주장 전 증거
-install.ps1                       Windows 설치
-install.sh                        macOS / Linux / WSL 설치
 ```
 
-## 설치
+## 어디에 넣나
 
-저장소를 받아서 설치 스크립트를 실행한다.
+`skills/` **아래의 6개 폴더**를 아래 경로에 통째로 복사한다. `skills/` 폴더 자체가 아니라
+그 안의 내용물이다.
 
-**Windows (PowerShell)**
+| 경로 (Windows) | 경로 (macOS/Linux/WSL) | 넣는 이유 |
+|---|---|---|
+| `%USERPROFILE%\.agents\skills\` | `~/.agents/skills/` | Orca가 "Agent skills home"으로 인식하는 공용 경로. **필수** |
+| `%USERPROFILE%\.claude\skills\` | `~/.claude/skills/` | Claude 워커가 읽는 경로 |
+| `%USERPROFILE%\.config\opencode\skills\` | `~/.config/opencode/skills/` | opencode 워커가 읽는 경로 |
+
+**세 곳 모두 넣는 것을 권한다.** `.agents\skills`는 Orca가 스킬을 인식하는 경로이고,
+나머지 둘은 워커 에이전트가 실제로 스킬을 로드하는 경로다. 쓰지 않는 에이전트의 경로는
+건너뛰어도 된다.
+
+복사 후 이런 모양이 되어야 한다:
+
+```
+%USERPROFILE%\.agents\skills\
+  orchestration\SKILL.md
+  orca-cli\SKILL.md
+  karpathy-guidelines\SKILL.md
+  systematic-debugging\SKILL.md
+  test-driven-development\SKILL.md
+  verification-before-completion\SKILL.md
+```
+
+같은 이름의 스킬이 이미 있으면 **폴더째 지우고 새로 복사한다.** 파일만 덮어쓰면 상류에서
+제거된 참조 문서가 남아 스킬이 없는 파일을 가리키게 된다.
+
+### PowerShell로 한 번에
 
 ```powershell
-git clone <이 저장소> orca-skills
-cd orca-skills
-.\install.ps1
+# 저장소를 받은 폴더에서 실행
+$src = ".\skills"
+foreach ($dst in @(
+    "$env:USERPROFILE\.agents\skills",
+    "$env:USERPROFILE\.claude\skills",
+    "$env:USERPROFILE\.config\opencode\skills"
+)) {
+    New-Item -ItemType Directory -Path $dst -Force | Out-Null
+    Get-ChildItem $src -Directory | ForEach-Object {
+        $target = Join-Path $dst $_.Name
+        if (Test-Path $target) { Remove-Item $target -Recurse -Force }
+        Copy-Item $_.FullName $target -Recurse -Force
+    }
+    Write-Host "설치: $dst"
+}
 ```
 
-**macOS / Linux / WSL**
+## 설치 확인
+
+복사했다고 동작하는 것이 아니다. 아래 순서로 확인한다.
 
 ```bash
-git clone <이 저장소> orca-skills
-cd orca-skills
-bash install.sh
+# 1. Orca가 스킬을 인식하는가
+orca skills installed | grep -E 'karpathy|test-driven|systematic-debug|verification-before'
+
+# 2. orchestration에 라우팅이 실렸는가 (1 이상이어야 한다)
+grep -c 'QUALITY CONTRACT' ~/.agents/skills/orchestration/SKILL.md
 ```
 
-스크립트는 `skills/` 아래 6개 디렉터리를 아래 경로에 복사한다.
+PowerShell이면 2번은 이렇게:
 
-| 경로 | 설치 조건 | 용도 |
-|---|---|---|
-| `~/.agents/skills` | 항상 | Orca가 "Agent skills home"으로 인식하는 공용 경로 |
-| `~/.claude/skills` | 디렉터리가 이미 있을 때 | Claude 워커 |
-| `~/.config/opencode/skills` | 디렉터리가 이미 있을 때 | opencode 워커 |
+```powershell
+Select-String -Path "$env:USERPROFILE\.agents\skills\orchestration\SKILL.md" -Pattern 'QUALITY CONTRACT'
+```
 
-없는 에이전트의 설정 디렉터리를 새로 만들지 않기 위해 조건부로 설치한다. 전부 만들려면
-`-All`(PowerShell) 또는 `--all`(bash)을 준다. `-DryRun` / `--dry-run`으로 미리 볼 수 있다.
-
-스크립트를 쓰지 않고 `skills/` 아래 디렉터리들을 위 경로에 직접 복사해도 동일하다.
+**3. 실제 디스패치 1건으로 확인한다.** 워커의 `worker_done` 보고서(`--body`)에 실행한 검증
+명령과 그 결과가 들어 있는지 본다. 없으면 규약이 spec에 실리지 않은 것이다.
+1·2번이 통과해도 코디네이터가 spec에 블록을 붙이지 않으면 아무 효과가 없으므로,
+이것이 진짜 검증이다.
 
 ## 동작 방식
 
@@ -79,30 +117,11 @@ bash install.sh
 코디네이터 자신이 코드를 짤 때도 동일하게 적용된다. orchestration이 로드되어 있다는 것이
 면제 사유가 아니다.
 
-## 검증
-
-설치했다고 동작하는 것이 아니다. 아래 순서로 확인한다.
-
-```bash
-# 1. Orca가 스킬을 인식하는가
-orca skills installed | grep -E 'karpathy|test-driven|systematic-debug|verification-before'
-
-# 2. orchestration에 라우팅이 실렸는가 (1 이상이어야 한다)
-grep -c 'QUALITY CONTRACT' ~/.agents/skills/orchestration/SKILL.md
-
-# 3. 실제 디스패치 1건 — 워커의 worker_done --body에 실행한 검증 명령과
-#    결과가 들어 있는지 본다. 없으면 규약이 spec에 안 실린 것이다.
-orca orchestration task-list --json
-```
-
-**3번이 진짜 검증이다.** 1·2번이 통과해도 코디네이터가 spec에 블록을 붙이지 않으면
-아무 효과가 없다.
-
 ## 갱신 시 주의
 
 `orchestration`과 `orca-cli`는 업스트림과 이름·경로가 같다.
 `orca skills update --skill orchestration`을 실행하면 커스터마이징이 업스트림 원문으로
-덮인다. 갱신은 이 저장소에서 내려받아 `install` 스크립트를 다시 실행하는 방식으로만 한다.
+덮인다. 갱신은 이 저장소에서 내려받아 다시 복사하는 방식으로만 한다.
 
 ## Windows 주의사항
 
