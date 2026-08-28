@@ -101,44 +101,74 @@ Naming a skill in the spec and expecting it to load silently drops the gate on s
 1. 착수 전: 스펙의 완료 조건을 검증 가능한 체크리스트로 바꾼다. 스펙 범위 밖의 파일은
    고치지 않는다. 판단이 필요한 지점은 가정을 명시하고 진행하되 보고서에 남긴다.
    [karpathy-guidelines]
-2. 버그, 테스트 실패, 예상 밖 동작을 만나면 수정을 제안하기 전에 근본 원인을 추적한다.
-   같은 문제에 수정 3회가 실패하면 네 번째를 시도하지 말고 escalation으로 보고한다.
-   [systematic-debugging]
-3. 완료를 주장하기 전에 검증 명령을 실제로 실행하고 출력을 읽는다. 실행하지 않은 명령의
+2. <<태스크 유형에 맞는 줄을 아래 표에서 골라 이 자리에 넣는다>>
+3. 작업 도중 버그, 테스트 실패, 예상 밖 동작을 만나면 수정을 제안하기 전에 근본 원인을
+   추적한다. 같은 문제에 수정 3회가 실패하면 네 번째를 시도하지 말고 escalation으로
+   보고한다. [systematic-debugging]
+4. 완료를 주장하기 전에 검증 명령을 실제로 실행하고 출력을 읽는다. 실행하지 않은 명령의
    결과를 추측해서 적지 않는다. [verification-before-completion]
-4. 질문은 사람이 아니라 코디네이터에게 보낸다:
+5. 질문은 사람이 아니라 코디네이터에게 보낸다:
    orca orchestration ask --question "<질문>" --timeout-ms 600000 --json
    터미널에 질문만 출력하고 기다리면 코디네이터는 그것을 보지 못하고, 양쪽이 서로를
    기다리는 교착이 된다. 스펙으로 결정할 수 있는 것은 묻지 말고 가정으로 처리한다.
-5. worker_done의 --body에 실행한 검증 명령과 그 결과(통과 수, 종료 코드)를 적는다.
+6. worker_done의 --body에 실행한 검증 명령과 그 결과(통과 수, 종료 코드)를 적는다.
    검증이 통과하지 않았으면 --outcome failed로 보고한다. 실패를 본문에만 적고
    succeeded를 보내면 Orca는 태스크를 성공으로 기록한다.
 위 대괄호 안의 스킬이 설치되어 있으면 열어서 세부 규칙까지 따른다.
 --- END QUALITY CONTRACT ---
 ```
 
-Then add one line for the task type, omitting the ones that do not apply:
+**Line 2 is a slot, not a line to send as-is.** Replace the `<<...>>` placeholder with the
+row matching the task, keeping the `2.` number:
 
-- Writes or changes code (feature, bugfix, refactor): `6. 구현 전에 실패하는 테스트를 먼저 쓰고, 실패하는 것을 실제로 확인한 뒤 구현한다. 테스트를 나중에 쓰지 않는다. [test-driven-development]`
-- Bugfix, additionally: `7. 원 증상을 재현하는 테스트를 남긴다. 그 테스트가 수정 전에는 실패하고 수정 후에는 통과하는 것을 확인한다.`
-- Review-only, no file edits: `6. 파일을 고치지 않는다. 발견 사항만 보고하고, 수정은 코디네이터가 배정한다.` — omit the TDD line entirely.
-- Investigation whose deliverable is a report: `6. 읽은 파일과 근거를 경로:줄 형식으로 남긴다. 확인하지 못한 것은 확인하지 못했다고 적는다.`
+| Task type | Text for line 2 |
+|---|---|
+| Feature, or any task that writes code | `2. 구현 전에 실패하는 테스트를 먼저 쓰고, 실패하는 것을 실제로 확인한 뒤 구현한다. 테스트를 나중에 쓰지 않는다. [test-driven-development]` |
+| Bugfix | Same as above, plus on its own line: `   원 증상을 재현하는 테스트를 남긴다. 그 테스트가 수정 전에는 실패하고 수정 후에는 통과하는 것을 확인한다.` |
+| Refactor | Same as the feature row — existing tests passing before and after is the success criterion |
+| Review-only, no file edits | `2. 파일을 고치지 않는다. 발견 사항만 보고하고, 수정은 코디네이터가 배정한다.` |
+| Investigation whose deliverable is a report | `2. 읽은 파일과 근거를 경로:줄 형식으로 남긴다. 확인하지 못한 것은 확인하지 못했다고 적는다.` |
 
-The numbering is the worker's time order. Item 1 is first because a test written before
-scope is settled tests the wrong thing. Item 3 is last because it is the gate immediately
-before `worker_done`. Item 2 is not a stage but a conditional rule that fires whenever a bug
-surfaces mid-task, which is why it precedes item 3.
+Never dispatch a spec that still contains the `<<...>>` placeholder.
 
-### Line 4 is not optional
+The numbering is the worker's time order, so read it top to bottom: settle scope (1), do the
+work under the rule for this task type (2), trace root causes for anything that surprises you
+along the way (3), verify (4), and report (5-6). Item 1 is first because a test written before
+scope is settled tests the wrong thing. Item 2 holds the task-type rule because that is when
+the work itself happens. Item 3 is not a stage but a conditional rule that fires whenever a
+bug surfaces mid-task. Item 4 is the gate immediately before `worker_done`.
+
+### Line 5 is not optional
 
 The bundled skills were written for interactive sessions and say things like "ask your human
 partner" and "Discuss with your human partner". A dispatched worker terminal has no human.
-Line 4 redefines that recipient; each bundled skill also carries an `Orca dispatch 컨텍스트`
+Line 5 redefines that recipient; each bundled skill also carries an `Orca dispatch 컨텍스트`
 section saying the same thing for workers that load the skill directly.
 
 Without it a worker prints its question and idles without sending `worker_done`, while the
 coordinator — correctly treating a `check --wait` timeout as a checkpoint rather than a
-failure — keeps waiting. **Both sides wait for each other.** Keep line 4 in every spec.
+failure — keeps waiting. **Both sides wait for each other.** Keep line 5 in every spec.
+
+### Reporting evidence on Windows
+
+Line 6 asks for the verification command and its output in `worker_done --body`, which makes
+that argument several lines long. `cmd.exe` cannot carry a newline inside a quoted argument
+at all, and in PowerShell a plain double-quoted string across lines is fragile. Workers on
+Windows should build the body as a here-string first:
+
+```powershell
+$body = @"
+근본 원인: 쿠폰 중첩 시 할인 합계에 상한이 없어 subtotal을 초과했다.
+검증: npm test 4/4 통과(exit 0). revert 시 exit 1 재현, 복원 후 exit 0.
+"@
+orca orchestration send --type worker_done --outcome succeeded `
+  --subject "장바구니 음수 결제금액 수정" --body $body `
+  --task-id <task_id> --dispatch-id <dispatch_id> --json
+```
+
+The closing `"@` must start at column 1. If a worker cannot produce a multi-line body in its
+shell, keep the body on one line and separate the facts with `; ` — never drop the evidence
+to make the command easier to quote.
 
 ### Coordinator side
 

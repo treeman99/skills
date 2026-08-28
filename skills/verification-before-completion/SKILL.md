@@ -145,6 +145,20 @@ orca orchestration send --type worker_done --outcome failed \
   --task-id <task_id> --dispatch-id <dispatch_id> --json
 ```
 
+**Windows 워커의 다중행 보고.** 검증 증거를 담으면 `--body`가 여러 줄이 된다. `cmd.exe`는 따옴표 안 개행을 아예 담지 못하고, PowerShell에서도 여러 줄에 걸친 큰따옴표 문자열은 깨지기 쉽다. here-string으로 먼저 만든다:
+
+```powershell
+$body = @"
+근본 원인: 쿠폰 중첩 시 할인 합계에 상한이 없어 subtotal을 초과했다.
+검증: npm test 4/4 통과(exit 0). revert 시 exit 1 재현, 복원 후 exit 0.
+"@
+orca orchestration send --type worker_done --outcome succeeded `
+  --subject "<상태>" --body $body `
+  --task-id <task_id> --dispatch-id <dispatch_id> --json
+```
+
+닫는 `"@`는 반드시 1열에서 시작해야 한다. 셸이 다중행을 못 다루면 본문을 한 줄로 두고 `; `로 구분한다. **명령을 따옴표로 묶기 편하자고 증거를 빼지 않는다.**
+
 **"에이전트가 성공했다고 보고함"은 증거가 아니다.** 위 본문의 Agent delegation 항목은 코디네이터에게도 그대로 적용된다. 워커의 `worker_done --outcome succeeded`를 받은 코디네이터는 VCS diff나 검증 명령으로 독립 확인한 뒤에만 완료를 주장한다.
 
 ---
