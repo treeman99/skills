@@ -127,6 +127,18 @@ Skip any step = lying, not verifying
 
 **게이트 위치:** `worker_done` 전송 직전이 이 스킬의 마지막 게이트다. Gate Function 5단계를 통과하지 못한 상태에서 `--outcome succeeded`를 보내는 것은 이 스킬 위반이다.
 
+**검증 명령이 없는 태스크에도 적용된다.** 리뷰나 조사처럼 실행할 테스트가 없는 태스크에서도 이 스킬은 면제되지 않는다. Gate Function의 "IDENTIFY: 이 주장을 무엇이 증명하는가"가 명령이 아닐 뿐이다. 리뷰의 발견 사항은 재현하거나 코드에서 짚어 확인한 것만 보고하고, 조사 결과는 코드를 읽어서 안 것과 실제로 실행해 확인한 것을 구분해 적는다. **읽고 그럴 것 같다고 판단한 것은 증거가 아니라 추측이다.** 추측을 보고할 때는 추측이라고 표시한다.
+
+**환경 때문에 검증이 불가능하면 실패가 아니라 escalation이다.** 검증 명령이 도구 미설치·권한·네트워크 때문에 실행 자체가 안 되면 `--outcome failed`가 아니라 `escalation`을 보낸다. 워커의 작업이 틀린 것이 아니라 검증할 수단이 없는 상태이고, 그 원인은 재시도해도 그대로다. `failed`로 보고하면 같은 실패가 쌓여 3회에서 dispatch 회로가 차단되고, 태스크는 환경을 고치기 전까지 영구히 실패한다.
+
+```bash
+# 검증 수단 자체가 없을 때 — 작업 결과가 아니라 환경을 보고한다
+orca orchestration send --type escalation \
+  --subject "검증 불가 - XCTest 부재" \
+  --body "swift test 가 'no such module XCTest'로 실패한다(exit 1). Xcode 없이 Command Line Tools만 설치된 환경이다. 코드 변경은 마쳤으나 통과 여부를 확인할 수단이 없어 완료를 주장하지 않는다. 검증 명령을 바꾸거나 워커 환경에 Xcode가 필요하다." \
+  --task-id <task_id> --dispatch-id <dispatch_id> --json
+```
+
 **증거를 보고서에 담는다.** `worker_done`의 `--body`에 실행한 검증 명령과 그 결과(테스트 통과 수, 종료 코드)를 적는다. 코디네이터는 워커 터미널을 읽지 않고 이 보고서로 판단하므로, 본문에 없는 증거는 존재하지 않는 것과 같다.
 
 **실패를 산문에만 담지 않는다.** 검증이 통과하지 않았다면 `--outcome failed`로 보고한다. 제목이나 본문에만 실패를 적고 `--outcome succeeded`를 보내면 Orca는 태스크를 성공으로 기록한다. 부분 성공도 실패다.

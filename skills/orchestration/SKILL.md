@@ -105,8 +105,10 @@ Naming a skill in the spec and expecting it to load silently drops the gate on s
 3. 작업 도중 버그, 테스트 실패, 예상 밖 동작을 만나면 수정을 제안하기 전에 근본 원인을
    추적한다. 같은 문제에 수정 3회가 실패하면 네 번째를 시도하지 말고 escalation으로
    보고한다. [systematic-debugging]
-4. 완료를 주장하기 전에 검증 명령을 실제로 실행하고 출력을 읽는다. 실행하지 않은 명령의
-   결과를 추측해서 적지 않는다. [verification-before-completion]
+4. 완료를 주장하기 전에 근거를 직접 확인한다. 검증 명령이 있으면 실제로 실행하고 출력을
+   읽는다. 명령이 없는 태스크(리뷰·조사)는 주장하는 내용을 재현하거나 코드에서 짚어
+   확인한다. 실행하지 않은 명령의 결과나 확인하지 않은 사실을 추측해서 적지 않는다.
+   [verification-before-completion]
 5. 질문은 사람이 아니라 코디네이터에게 보낸다:
    orca orchestration ask --question "<질문>" --timeout-ms 600000 --json
    터미널에 질문만 출력하고 기다리면 코디네이터는 그것을 보지 못하고, 양쪽이 서로를
@@ -114,6 +116,9 @@ Naming a skill in the spec and expecting it to load silently drops the gate on s
 6. worker_done의 --body에 실행한 검증 명령과 그 결과(통과 수, 종료 코드)를 적는다.
    검증이 통과하지 않았으면 --outcome failed로 보고한다. 실패를 본문에만 적고
    succeeded를 보내면 Orca는 태스크를 성공으로 기록한다.
+   단, 검증 명령이 환경 문제로 실행 자체가 안 되면(도구 미설치, 권한, 네트워크)
+   failed가 아니라 escalation을 보낸다. 그 원인은 재시도해도 그대로라, failed로
+   보고하면 같은 실패가 쌓여 3회에서 dispatch 회로가 차단된다.
 위 대괄호 안의 스킬이 설치되어 있으면 열어서 세부 규칙까지 따른다.
 --- END QUALITY CONTRACT ---
 ```
@@ -126,8 +131,8 @@ row matching the task, keeping the `2.` number:
 | Feature, or any task that writes code | `2. 구현 전에 실패하는 테스트를 먼저 쓰고, 실패하는 것을 실제로 확인한 뒤 구현한다. 테스트를 나중에 쓰지 않는다. [test-driven-development]` |
 | Bugfix | Same as above, plus on its own line: `   원 증상을 재현하는 테스트를 남긴다. 그 테스트가 수정 전에는 실패하고 수정 후에는 통과하는 것을 확인한다.` |
 | Refactor | Same as the feature row — existing tests passing before and after is the success criterion |
-| Review-only, no file edits | `2. 파일을 고치지 않는다. 발견 사항만 보고하고, 수정은 코디네이터가 배정한다.` |
-| Investigation whose deliverable is a report | `2. 읽은 파일과 근거를 경로:줄 형식으로 남긴다. 확인하지 못한 것은 확인하지 못했다고 적는다.` |
+| Review-only, no file edits | `2. 파일을 고치지 않는다. 발견 사항만 보고하고, 수정은 코디네이터가 배정한다. 각 발견 사항은 재현하거나 코드에서 짚어 확인한 것만 적고, 근거를 경로:줄로 남긴다. 확인하지 못한 의심은 의심이라고 표시한다.` |
+| Investigation whose deliverable is a report | `2. 읽은 파일과 근거를 경로:줄 형식으로 남긴다. 코드를 읽어서 안 것과 실제로 실행해 확인한 것을 구분해 적는다. 확인하지 못한 것은 확인하지 못했다고 적는다.` |
 
 Never dispatch a spec that still contains the `<<...>>` placeholder.
 
@@ -137,6 +142,11 @@ along the way (3), verify (4), and report (5-6). Item 1 is first because a test 
 scope is settled tests the wrong thing. Item 2 holds the task-type rule because that is when
 the work itself happens. Item 3 is not a stage but a conditional rule that fires whenever a
 bug surfaces mid-task. Item 4 is the gate immediately before `worker_done`.
+
+Item 4 binds every task type, not just the ones that run a command. A review or an
+investigation has no test suite to execute, but it still makes claims, and an unreproduced
+claim is a guess. Reading code and saying what it appears to do is not the same as confirming
+it does that — the task-type rows for those two say so explicitly.
 
 ### Line 5 is not optional
 
