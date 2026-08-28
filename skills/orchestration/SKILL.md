@@ -97,18 +97,22 @@ Naming a skill in the spec and expecting it to load silently drops the gate on s
 `task-create --spec`, keeping the wording — workers key off this shape:
 
 ```text
---- QUALITY CONTRACT ---
+--- QUALITY CONTRACT (Orca dispatch 전용) ---
 1. 착수 전: 스펙의 완료 조건을 검증 가능한 체크리스트로 바꾼다. 스펙 범위 밖의 파일은
    고치지 않는다. 판단이 필요한 지점은 가정을 명시하고 진행하되 보고서에 남긴다.
-   [karpathy-guidelines]
+   단, 빌드 설정·의존성 매니페스트·공통 설정처럼 다른 워커도 건드릴 파일을 고쳐야 하면
+   가정으로 처리하지 말고 5번의 ask로 묻는다. 같은 워크트리에서 다른 워커가 동시에
+   작업 중일 수 있고, 그 파일을 양쪽이 고치면 서로의 작업을 덮는다. [karpathy-guidelines]
 2. <<태스크 유형에 맞는 줄을 아래 표에서 골라 이 자리에 넣는다>>
 3. 작업 도중 버그, 테스트 실패, 예상 밖 동작을 만나면 수정을 제안하기 전에 근본 원인을
-   추적한다. 같은 문제에 수정 3회가 실패하면 네 번째를 시도하지 말고 escalation으로
+   추적한다. 한 번에 하나씩 고친다 - 여러 변경을 묶어 시도하면 무엇이 효과가 있었는지
+   알 수 없다. 같은 문제에 수정 3회가 실패하면 네 번째를 시도하지 말고 escalation으로
    보고한다. [systematic-debugging]
 4. 완료를 주장하기 전에 근거를 직접 확인한다. 검증 명령이 있으면 실제로 실행하고 출력을
    읽는다. 명령이 없는 태스크(리뷰·조사)는 주장하는 내용을 재현하거나 코드에서 짚어
    확인한다. 실행하지 않은 명령의 결과나 확인하지 않은 사실을 추측해서 적지 않는다.
-   [verification-before-completion]
+   "아마", "~일 것이다", "~로 보인다", "고쳐졌을 것"으로 완료를 말하지 않는다. 게이트를
+   건너뛰는 것은 검증이 아니라 거짓 보고다. [verification-before-completion]
 5. 질문은 사람이 아니라 코디네이터에게 보낸다:
    orca orchestration ask --question "<질문>" --timeout-ms 600000 --json
    터미널에 질문만 출력하고 기다리면 코디네이터는 그것을 보지 못하고, 양쪽이 서로를
@@ -120,6 +124,9 @@ Naming a skill in the spec and expecting it to load silently drops the gate on s
    failed가 아니라 escalation을 보낸다. 그 원인은 재시도해도 그대로라, failed로
    보고하면 같은 실패가 쌓여 3회에서 dispatch 회로가 차단된다.
 위 대괄호 안의 스킬이 설치되어 있으면 열어서 세부 규칙까지 따른다.
+이 블록은 taskId와 dispatchId가 주어진 dispatch에서만 유효하다. 그 두 값이 없는 채로
+이 블록을 받았다면 5번과 6번은 실행할 수 없다. 그 둘을 빼고 1~4번만 따른 뒤, 완료를
+지시한 사람에게 직접 보고한다.
 --- END QUALITY CONTRACT ---
 ```
 
@@ -128,9 +135,9 @@ row matching the task, keeping the `2.` number:
 
 | Task type | Text for line 2 |
 |---|---|
-| Feature, or any task that writes code | `2. 구현 전에 실패하는 테스트를 먼저 쓰고, 실패하는 것을 실제로 확인한 뒤 구현한다. 테스트를 나중에 쓰지 않는다. [test-driven-development]` |
+| Feature, or any task that writes code | `2. 구현 전에 실패하는 테스트를 먼저 쓰고, 실패하는 것을 실제로 확인한 뒤 구현한다. 테스트를 나중에 쓰지 않는다. 구현을 먼저 써버렸다면 지우고 테스트부터 다시 시작한다. [test-driven-development]` |
 | Bugfix | Same as above, plus on its own line: `   원 증상을 재현하는 테스트를 남긴다. 그 테스트가 수정 전에는 실패하고 수정 후에는 통과하는 것을 확인한다.` |
-| Refactor | Same as the feature row — existing tests passing before and after is the success criterion |
+| Refactor | `2. 손대기 전에 기존 테스트가 통과하는 것을 먼저 확인해 기준선을 잡는다. 겉보기 동작을 바꾸지 않는 작업이므로 새 테스트를 만들지 않는다. 리팩터링 후 같은 테스트가 그대로 통과해야 한다. 통과하지 않으면 리팩터링이 아니라 동작 변경이므로 되돌리고 다시 한다. [test-driven-development]` |
 | Review-only, no file edits | `2. 파일을 고치지 않는다. 발견 사항만 보고하고, 수정은 코디네이터가 배정한다. 각 발견 사항은 재현하거나 코드에서 짚어 확인한 것만 적고, 근거를 경로:줄로 남긴다. 확인하지 못한 의심은 의심이라고 표시한다.` |
 | Investigation whose deliverable is a report | `2. 읽은 파일과 근거를 경로:줄 형식으로 남긴다. 코드를 읽어서 안 것과 실제로 실행해 확인한 것을 구분해 적는다. 확인하지 못한 것은 확인하지 못했다고 적는다.` |
 
@@ -187,6 +194,17 @@ to make the command easier to quote.
 a VCS diff or the verification command before reporting completion to the user. A
 `worker_done` whose `--body` carries no command output is an incomplete report — ask for the
 evidence over `dispatch:<id>` rather than accepting it.
+
+**Confirm before `worker-release`, not after.** Release closes that dispatch's agent
+terminal. Once it is gone, a report that turns out to be wrong costs a fresh worker and a
+fresh dispatch, and whatever was only in that terminal's scrollback is unrecoverable. The
+order is: read the `worker_done`, check the claim against the diff or the verification
+command, and only then decide between handing the terminal to a follow-up Dispatch and
+releasing it.
+
+Check the `--files-modified` list against the actual diff. A worker that reports files it
+did not touch, or touched files it did not report, has given you an unreliable report even
+when the outcome says `succeeded`.
 
 ### Do not attach this to full handoffs
 
