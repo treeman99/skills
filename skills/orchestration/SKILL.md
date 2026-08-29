@@ -212,6 +212,43 @@ when the outcome says `succeeded`.
 there has no `ask` or `worker_done` target. Handing off ownership hands off the quality
 contract with it.
 
+## Coordinator field notes
+
+Two things the served guide does not cover that cost real coordinator time. Both were
+confirmed against a running binary rather than inferred, and both are Orca behavior rather
+than distribution policy — recheck them if the served guide starts documenting either.
+
+### Title every task explicitly
+
+The served guide shows `task-create` as `--spec` with `--deps`/`--parent`/`--json`, so it is
+easy to miss that the CLI also accepts `--task-title` and `--display-name`:
+
+```text
+ORCA orchestration task-create --task-title "<short title>" --spec "<full spec>" --json
+```
+
+With no `--task-title`, Orca derives the title from the spec: **the first non-empty line**,
+whitespace runs collapsed to single spaces, truncated to 80 characters with a trailing `...`.
+`--display-name` falls back to that title and allows 160.
+
+So a spec that opens with a path, a constraint, or a bracketed header turns the task list into
+rows that all begin with the same boilerplate, and `task-list --brief` stops working as the
+coordinator's external memory. Pass `--task-title` unless the spec's first line already reads
+as a title on its own.
+
+### `legacy_ambiguous` rows in `worker-list` are not leaks
+
+`worker-list` may show settled dispatches carrying `ownershipState: external`,
+`terminalState: retained`, and `retainedReason: legacy_ambiguous`. A schema migration
+backfilled those rows for terminals created before Orca tracked worker terminal ownership.
+It cannot prove who owns them, so it marks them external instead of claiming them.
+
+They are not stuck workers, and there is no cleanup command for them. `worker-release` on
+such a dispatch returns `retained` with that same reason and performs no process action —
+deliberate, because Orca will not close a terminal it cannot prove it owns. Do not reach for
+`terminal close` to tidy them up: the real owner is unknown and may be a terminal the user is
+working in. Scope sweeps to the Run you are coordinating instead of reading the whole table.
+
 ## If an older Orca does not recognize `skills get`
 
 Use this fallback only when the selected binary explicitly reports that `skills get` is an
@@ -233,10 +270,11 @@ command surface this older binary may not support.
 
 ## 출처와 커스터마이징 기록
 
-Orca 사내 배포판이 번들한 스킬이다. **업스트림 원문에 `Bundled quality skills` 절과 이 절만 추가했고, 나머지 본문과 frontmatter는 손대지 않았다.**
+Orca 사내 배포판이 번들한 스킬이다. **업스트림 원문에 `Bundled quality skills` 절, `Coordinator field notes` 절, 그리고 이 절만 추가했고, 나머지 본문과 frontmatter는 손대지 않았다.**
 
 - 출처: `stablyai/orca` · `skills/orchestration/SKILL.md` (커밋 `94e75866`)
 - 추가 1건: `Bundled quality skills` 절. 번들된 엔지니어링 규율 스킬을 언제 로드하고, 워커에게 디스패치할 때 태스크 spec에 무엇을 주입할지 정한다.
+- 추가 2건: `Coordinator field notes` 절. 업스트림 가이드가 다루지 않아 코디네이터가 실제로 시간을 버린 두 지점을 적었다 — `task-create`의 `--task-title`/`--display-name` 미문서화(없으면 spec 첫 줄에서 제목을 파생한다), `worker-list`의 `legacy_ambiguous` 행이 누수가 아니라는 것. Orca 1.4.191 소스(`src/shared/orchestration-task-display.ts`, `src/main/runtime/orchestration/db/worker-terminal/worker-terminal-release.ts`)와 실제 CLI 실행으로 확인했다(2026-08-29). 업스트림 가이드가 이 둘을 문서화하면 이 절은 지운다.
 - 이 절이 유일한 정본이다. `orca skills get orchestration`이 서비스하는 가이드에는 품질 스킬 라우팅이 없으므로(업스트림 가이드 435줄에 해당 내용 없음), 이 스킬 파일만으로 자립 동작하도록 규약 본문을 그대로 담았다. Orca 소스를 수정할 필요가 없다.
 - frontmatter의 `description`은 업스트림 그대로다. Orca가 이 필드로 스킬을 라우팅하므로 바꾸지 않는다.
 - **주의:** 이 스킬은 업스트림과 이름·경로가 같다. `orca skills update --skill orchestration`을 실행하면 위 커스터마이징이 업스트림 원문으로 덮인다. 갱신은 이 저장소에서 내려받는 방식으로만 한다.
