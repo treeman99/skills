@@ -1,15 +1,83 @@
 # Orca 스킬 — 원본 보관 및 복구용 (main)
 
-이 브랜치는 **손대지 않은 Orca 번들 스킬 원본**을 담는다. 커스터마이징한 스킬이 문제를
-일으켰을 때 되돌리기 위한 것이다.
+이 브랜치는 **손대지 않은 업스트림 스킬 원본**을 담는다. 커스터마이징한 스킬이 문제를
+일으켰을 때 되돌리기 위한 것이고, 커스터마이징이 원문에서 무엇을 바꿨는지 diff로
+확인하기 위한 기준선이기도 하다.
 
 | 브랜치 | 내용 | 용도 |
 |---|---|---|
-| `main` (여기) | `orchestration`, `orca-cli` 원본 | 복구 |
-| `orca_skill` | 커스터마이징 + 품질 스킬 4종 | 실제 사용 |
+| `main` (여기) | 업스트림 원본 12종 | 복구·대조 기준선 |
+| `orca_skill` | 커스터마이징 6종 | 실제 사용 |
 
-원본 출처: `stablyai/orca` 커밋 `94e75866`. `skills/` 아래 파일은 그 저장소의
-`skills/` 내용과 바이트 단위로 같다. 여기서는 **아무것도 수정하지 않는다.**
+**여기서는 아무것도 수정하지 않는다.** `skills/` 아래 파일은 아래 표의 커밋에 있는
+원문과 바이트 단위로 같다. 수정본이 필요하면 `orca_skill` 브랜치에 둔다.
+
+## 무엇이 들어 있나
+
+### Orca 번들 스킬 — `stablyai/orca` `3d0bd6a3` (2026-08-30)
+
+Orca가 `orca skills install`로 설치하는 스킬 전부다. Orca 1.4.192 기준 8종이며,
+`orca skills list --json`이 내놓는 목록과 일치한다.
+
+| 스킬 | `orca_skill`이 쓰나 |
+|---|---|
+| `orchestration` | **예** (커스터마이징) |
+| `orca-cli` | **예** (원문 그대로) |
+| `computer-use` | 아니오 |
+| `linear-tickets` | 아니오 — `orca-linear`의 레거시 별칭 |
+| `orca-linear` | 아니오 |
+| `orca-emulator` | 아니오 |
+| `orca-emulator-android` | 아니오 |
+| `orca-per-workspace-env` | 아니오 |
+
+`orca_skill`이 쓰지 않는 6종도 담아 둔다. Orca 업데이트가 번들 스킬을 덮어썼을 때
+되돌릴 원본이 여기 있어야 하기 때문이다.
+
+### 품질 스킬 — 서드파티
+
+| 스킬 | 상류 | 커밋 | 라이선스 |
+|---|---|---|---|
+| `karpathy-guidelines` | `multica-ai/andrej-karpathy-skills` | `2c606141936f` | MIT |
+| `test-driven-development` | `obra/superpowers` | `b36e0829c6d0` | MIT (Jesse Vincent) |
+| `systematic-debugging` | `obra/superpowers` | `b36e0829c6d0` | MIT (Jesse Vincent) |
+| `verification-before-completion` | `obra/superpowers` | `b36e0829c6d0` | MIT (Jesse Vincent) |
+
+`orca_skill`은 이 4종에 `Orca dispatch 컨텍스트` 절과 출처절을 덧붙여 쓴다. 무엇이
+덧붙었는지는 이 브랜치와 diff를 뜨면 그대로 나온다.
+
+```bash
+git diff main:skills/karpathy-guidelines/SKILL.md orca_skill:skills/karpathy-guidelines/SKILL.md
+```
+
+`skills/systematic-debugging/`에는 상류가 함께 배포하는 `CREATION-LOG.md`와
+`test-*.md`가 그대로 들어 있다. `orca_skill`은 이것들을 빼고 배포하지만, 여기서는
+원문을 손대지 않는 것이 원칙이라 남겨 둔다.
+
+### 라이선스 원문
+
+`licenses/superpowers-LICENSE` — `obra/superpowers` 저장소 루트의 MIT 라이선스 전문.
+상류가 스킬 폴더 안에 라이선스 파일을 두지 않으므로, 스킬 폴더를 원문과 바이트 단위로
+같게 유지하려고 밖에 뒀다.
+
+`multica-ai/andrej-karpathy-skills`는 저장소에 LICENSE 파일이 없다. MIT임은
+`.claude-plugin/plugin.json`의 `"license": "MIT"`와 `SKILL.md` frontmatter의
+`license: MIT`에 적혀 있다.
+
+## SKILL.md 는 stub 이다 — 통째로 뜨지 말 것
+
+`orchestration`과 `orca-cli`의 `SKILL.md`는 **발견용 stub**이다. 실제 사용법 본문은
+`orca` 바이너리가 서비스한다. 바이너리와 문서가 어긋나지 않게 하려고 상류가 일부러
+본문을 파일에서 뺐다.
+
+그래서 이 명령으로 파일을 갱신하면 **안 된다.**
+
+```bash
+orca skills get orchestration > skills/orchestration/SKILL.md   # 틀렸다
+```
+
+`orca skills get`은 stub이 아니라 **전체 가이드**(400줄 이상)를 내놓는다. 그 결과를
+`SKILL.md`에 쓰면 설치본과 다른 파일이 되어 복구용으로 못 쓴다. 갱신은 아래
+"이 브랜치를 갱신하려면" 절의 방법으로 한다.
 
 ## 무엇이 설치되어 있나
 
@@ -145,6 +213,10 @@ foreach ($root in $roots) {
 **주의:** 폴더를 지우고 새로 복사한다. 파일만 덮어쓰면 커스터마이징 버전에만 있던
 파일이 남아 원본과 섞인다.
 
+**품질 스킬 4종은 복사하지 않는다.** 이 브랜치에 원문이 들어 있지만 복구 대상이
+아니다. 원래 설치되어 있지 않던 스킬이라 지우는 것이 복구다. 여기 있는 원문은
+대조와 재도입용이다.
+
 ## 복구 확인
 
 ```bash
@@ -191,15 +263,62 @@ Select-String -Path "$env:USERPROFILE\.agents\skills\orchestration\SKILL.md" -Pa
 git clone -b orca_skill https://github.com/treeman99/skills.git
 ```
 
-## 이 브랜치를 최신 원본으로 갱신하려면
+## 이 브랜치를 갱신하려면
 
-Orca를 업데이트해 번들 스킬이 바뀌었다면, 이 브랜치도 맞춰 둬야 복구가 의미 있다.
+Orca를 업데이트했거나 상류 품질 스킬이 바뀌었다면, 이 브랜치도 맞춰 둬야 복구가
+의미 있다. **상류 저장소에서 직접 받는다.** 앞의 "SKILL.md 는 stub 이다" 절에서
+설명했듯 `orca skills get`으로는 갱신할 수 없다.
+
+### Orca 번들 스킬
 
 ```bash
-# 설치된 Orca 가 서비스하는 원본을 그대로 뜬다
-orca skills get orchestration > skills/orchestration/SKILL.md
-orca skills get orca-cli      > skills/orca-cli/SKILL.md
-git diff   # 바뀐 게 있으면 커밋
+# 이 저장소의 main 체크아웃 안에서 실행한다
+tmp=$(mktemp -d)
+git clone --filter=blob:none --no-checkout --depth 1 https://github.com/stablyai/orca "$tmp/orca"
+git -C "$tmp/orca" sparse-checkout set --no-cone skills
+git -C "$tmp/orca" checkout
+git -C "$tmp/orca" log -1 --format='%H %ad' --date=short   # 이 커밋을 위 표에 적는다
+
+# 스킬이 추가·삭제될 수 있으므로 폴더째 갈아 끼운다
+for s in "$tmp"/orca/skills/*/; do
+  n=$(basename "$s")
+  rm -rf "skills/$n"
+  cp -R "$s" "skills/$n"
+done
+rm -rf "$tmp"
+git status   # 바뀐 게 있으면 커밋
 ```
 
-또는 `stablyai/orca` 저장소의 `skills/` 디렉터리에서 직접 받는다.
+설치된 Orca가 어떤 스킬을 번들하는지는 `orca skills list --json`으로 확인한다.
+상류 `skills/` 목록과 다르면 Orca 앱이 상류보다 오래된 것이다.
+
+### 품질 스킬
+
+```bash
+tmp=$(mktemp -d)
+git clone --filter=blob:none --depth 1 https://github.com/obra/superpowers "$tmp/sp"
+git clone --filter=blob:none --depth 1 https://github.com/multica-ai/andrej-karpathy-skills "$tmp/ka"
+git -C "$tmp/sp" log -1 --format='%H %ad' --date=short   # 이 커밋들을 위 표에 적는다
+git -C "$tmp/ka" log -1 --format='%H %ad' --date=short
+
+for n in test-driven-development systematic-debugging verification-before-completion; do
+  rm -rf "skills/$n"; cp -R "$tmp/sp/skills/$n" "skills/$n"
+done
+rm -rf skills/karpathy-guidelines
+cp -R "$tmp/ka/skills/karpathy-guidelines" skills/karpathy-guidelines
+cp "$tmp/sp/LICENSE" licenses/superpowers-LICENSE
+rm -rf "$tmp"
+git status
+```
+
+### 갱신 후 확인
+
+`skills/` 아래가 상류와 바이트 단위로 같아야 한다. 커밋 전에 확인한다.
+
+```bash
+git diff --stat            # 의도한 파일만 바뀌었는가
+git status --short         # 상류가 추가·삭제한 파일이 반영되었는가
+```
+
+상류가 스킬을 삭제했다면 이 브랜치에서도 지운다. 남겨 두면 없어진 스킬을 복구해
+넣는 사고가 난다.
