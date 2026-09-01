@@ -67,6 +67,53 @@ change between Orca releases, and this file deliberately no longer lists them. C
 app is up with `ORCA status --json` (start it with `ORCA open --json` if needed), and
 prefer `--json` for agent-driven calls.
 
+## Working files
+
+**This binds whenever this skill is loaded** — a coordinator dispatching workers, a
+dispatched worker, and equally a session that never dispatches anything and just works in
+the user's project. It is not part of the dispatch contract's conditional half.
+
+A plan, a scratch analysis, a review note, a long-form report — none of these are what was
+asked for, and an agent left to its own judgment picks its own location and its own name.
+That is how a project ends up with `PLAN-auth.md` at the repo root, `notes.md` beside
+whatever file was being read at the time, and a folder invented on the spot for the rest.
+The person whose project it is then sorts them out of a diff that should have carried the
+actual change only.
+
+**Every working file goes under `.orca/artifacts/` in the worktree being worked in.** Never
+the repo root, never `docs/`, never beside the code being read, and never a new top-level
+folder invented for the purpose.
+
+| Situation | Folder |
+|---|---|
+| Dispatched worker with a `taskId` | `.orca/artifacts/<task_id>/` |
+| No `taskId` — working directly, or a full handoff | `.orca/artifacts/<short-slug>/` |
+
+The task id is preferred because it is the one identifier the coordinator, the `worker_done`
+payload, and `dispatch-show` already share, so a stray file always traces back to the task
+that wrote it. Without one, any short name that identifies the work will do. Inside the
+folder, names are free.
+
+- **Deliverables are exempt.** Source, tests, and documentation that were actually asked for
+  belong where the project keeps them. This rule covers only the scaffolding produced in
+  order to do the job.
+- **`--report-path` points inside it** when there is a dispatch:
+  `--report-path .orca/artifacts/<task_id>/report.md`. Letting the coordinator open the long
+  form without searching for it is the reason that flag exists.
+- **`.orca/` is already Orca's workspace namespace** — `.orca/drops`, `.orca/templates`,
+  `.orca/browser-downloads`, `.orca/issue-command` — so a project that ignores `.orca` keeps
+  all of this out of `git status` with one entry. Whether to add that entry is the project
+  owner's call; do not edit a project's ignore file to make this rule tidier.
+
+**A dispatched worker only sees the spec.** It never reads this file, so the rule has to
+travel in the text the coordinator sends: that is what item 1-1 of the QUALITY CONTRACT is.
+A worker that was never told writes wherever it likes, which is the whole failure this exists
+to stop.
+
+The served guide does not carry this rule. Nothing in `ORCA skills get orchestration` says
+where to put a plan file; `--report-path` appears there as an optional flag with no
+convention attached. Drop this section if a future guide specifies one, and follow the guide.
+
 ## Bundled quality skills
 
 This distribution ships four engineering-discipline skills alongside orchestration. They are
@@ -88,7 +135,9 @@ because the guide is silent.
 
 Load the matching skill at the trigger above and follow it. Orchestration being loaded does
 not exempt the coordinator: a coordinator that writes code follows `test-driven-development`,
-and a coordinator that reports completion follows `verification-before-completion`.
+and a coordinator that reports completion follows `verification-before-completion`. The
+working-files rule above applies here too — a coordinator's own plan or scratch analysis goes
+under `.orca/artifacts/` like anyone else's.
 
 ### If you are dispatching to workers
 
@@ -166,42 +215,6 @@ Item 4 binds every task type, not just the ones that run a command. A review or 
 investigation has no test suite to execute, but it still makes claims, and an unreproduced
 claim is a guess. Reading code and saying what it appears to do is not the same as confirming
 it does that — the task-type rows for those two say so explicitly.
-
-### Where working files go
-
-A plan, a scratch analysis, a review note, a long-form report — none of these are what the
-task was asked to deliver, and each worker left to its own judgment picks its own location
-and its own name. A run across four tasks then leaves `PLAN-auth.md` at the repo root,
-`notes.md` beside whatever code that worker happened to be reading, and two more the
-coordinator never sees. The user sorts them out of a diff that should have carried code only.
-
-Item 1-1 puts all of it under `.orca/artifacts/<task_id>/` in the worktree the task runs in.
-
-- **`.orca/` is already Orca's workspace namespace** — `.orca/drops`, `.orca/templates`,
-  `.orca/browser-downloads`, `.orca/issue-command`. One ignore entry covers every task's
-  scaffolding. Orca does write `.orca` into `.gitignore`, but only when the app itself
-  creates something under that directory, so a repo that has never hit one of those paths
-  will not have the entry. **Check it once per repo before dispatching**, or the rule moves
-  the clutter without removing it from `git status`:
-  `grep -qxF .orca .gitignore || echo .orca >> .gitignore`
-- **The folder is named with the task id, not a description.** That id is the one identifier
-  the coordinator, the `worker_done` payload, and `dispatch-show` already share, so any stray
-  file traces back to the task that wrote it. Inside the folder, names are free.
-- **Deliverables are exempt.** Source, tests, and documentation the task was asked to produce
-  belong where the project keeps them. This rule covers only the scaffolding a task writes in
-  order to do its job.
-- **`--report-path` points inside it.** `--report-path .orca/artifacts/<task_id>/report.md`
-  is what lets the coordinator open the long form without searching for it, which is the
-  reason that flag exists.
-
-**The coordinator has to inject this.** The dispatch preamble does not carry it, so a worker
-that was never told writes wherever it likes — which is the whole failure this rule exists to
-stop. It is inside the QUALITY CONTRACT block for that reason: one block to append, not two.
-
-The served guide does not carry this rule either. Nothing in `ORCA skills get orchestration`
-tells a worker where to put a plan file; `--report-path` appears there as an optional flag
-with no convention attached. Drop this section if a future guide starts specifying one, and
-follow the guide instead.
 
 ### Line 5 is not optional
 
@@ -318,11 +331,11 @@ command surface this older binary may not support.
 
 ## 출처와 커스터마이징 기록
 
-Orca 사내 배포판이 번들한 스킬이다. **업스트림 원문에 `Bundled quality skills` 절, `Where working files go` 절, `Coordinator field notes` 절, 그리고 이 절만 추가했고, 나머지 본문과 frontmatter는 손대지 않았다.**
+Orca 사내 배포판이 번들한 스킬이다. **업스트림 원문에 `Working files` 절, `Bundled quality skills` 절, `Coordinator field notes` 절, 그리고 이 절만 추가했고, 나머지 본문과 frontmatter는 손대지 않았다.**
 
 - 출처: `stablyai/orca` · `skills/orchestration/SKILL.md` (커밋 `c5d43b8a`)
 - 추가 1건: `Bundled quality skills` 절. 번들된 엔지니어링 규율 스킬을 언제 로드하고, 워커에게 디스패치할 때 태스크 spec에 무엇을 주입할지 정한다.
-- 추가 2건: `Where working files go` 절과 규약 1-1번. 산출물이 아닌 작업 파일을 `.orca/artifacts/<task_id>/`에만 쓰게 한다. 상류 소스(`skill-guides/orchestration.md`)에 같은 취지의 `Work Artifacts` 절이 **미커밋 상태로** 존재하지만(2026-09-01 확인), HEAD에도 상류 main `c5d43b8a`에도 없고 설치된 1.4.192가 서비스하는 가이드에도 없다. 규약 번호를 1-1로 둔 것은 뒤 번호를 밀지 않기 위해서다 — README와 `docs/how-it-works.md`가 2~6번을 그 번호로 참조한다. 상류가 이 규약을 릴리스하면 이 절을 지우고 가이드를 따른다.
+- 추가 2건: `Working files` 절과 규약 1-1번. 산출물이 아닌 작업 파일을 `.orca/artifacts/` 아래에만 쓰게 한다. 디스패치 여부와 무관하게 적용되므로 최상위 절로 뒀다 — 사용자가 겪은 문제는 디스패치 없이 그냥 자기 프로젝트에서 스킬을 쓸 때 폴더가 제멋대로 생기는 것이었다. 사내 Orca 체크아웃(`enterprise/samsungds`)에 같은 취지의 `Work Artifacts` 절이 `f1c3963d`로 커밋돼 있지만(2026-09-01 확인), 상류 main `c5d43b8a`에는 없고 빌드 전이라 설치된 1.4.192가 서비스하는 가이드에도 없다. 그 빌드가 배포될 때까지는 이 절이 유일하게 실제로 걸리는 경로다. 규약 번호를 1-1로 둔 것은 뒤 번호를 밀지 않기 위해서다 — README와 `docs/how-it-works.md`가 2~6번을 그 번호로 참조한다. 상류가 이 규약을 릴리스하면 이 절을 지우고 가이드를 따른다.
 - 추가 3건: `Coordinator field notes` 절. 업스트림 가이드가 다루지 않아 코디네이터가 실제로 시간을 버린 두 지점을 적었다 — `task-create`의 `--task-title`/`--display-name` 미문서화(없으면 spec 첫 줄에서 제목을 파생한다), `worker-list`의 `legacy_ambiguous` 행이 누수가 아니라는 것. Orca 1.4.191 소스(`src/shared/orchestration-task-display.ts`, `src/main/runtime/orchestration/db/worker-terminal/worker-terminal-release.ts`)와 실제 CLI 실행으로 확인했다(2026-08-29). 업스트림 가이드가 이 둘을 문서화하면 이 절은 지운다.
 - 이 절이 유일한 정본이다. `orca skills get orchestration`이 서비스하는 가이드에는 품질 스킬 라우팅도 작업 파일 위치 규약도 없으므로(업스트림 가이드 435줄에 해당 내용 없음), 이 스킬 파일만으로 자립 동작하도록 규약 본문을 그대로 담았다. Orca 소스를 수정할 필요가 없다.
 - frontmatter의 `description`은 업스트림 그대로다. Orca가 이 필드로 스킬을 라우팅하므로 바꾸지 않는다.
