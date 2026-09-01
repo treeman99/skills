@@ -8,10 +8,13 @@ description: >-
   requests phrased as "hand off", "handoff", "handover", "give this to another
   agent", or "another worktree" when the user did not explicitly ask to
   supervise, monitor, wait for results, or coordinate a DAG. Use `orca-cli` for
-  ordinary terminal control, lightweight terminal prompts, shell commands, Orca
+  terminal control, lightweight terminal prompts, shell commands, Orca
   worktree management, reading or waiting on terminals, and automation of the
-  browser embedded inside Orca. Use Computer Use for browser windows, webviews,
-  Orca app UI, or desktop UI outside Orca's embedded browser.
+  browser embedded inside Orca. Use Computer Use for external browser windows,
+  webviews, Orca app UI, or desktop UI outside Orca's embedded browser only when
+  the task requires OS/window-level control such as focus, menus, dialogs,
+  coordinates, or screenshots. Use `orca-cli` for Orca's embedded pages and a
+  page-automation tool such as Playwright or CDP for external pages.
 ---
 
 # Orca Orchestration
@@ -272,7 +275,7 @@ command surface this older binary may not support.
 
 Orca 사내 배포판이 번들한 스킬이다. **업스트림 원문에 `Bundled quality skills` 절, `Coordinator field notes` 절, 그리고 이 절만 추가했고, 나머지 본문과 frontmatter는 손대지 않았다.**
 
-- 출처: `stablyai/orca` · `skills/orchestration/SKILL.md` (커밋 `94e75866`)
+- 출처: `stablyai/orca` · `skills/orchestration/SKILL.md` (커밋 `c5d43b8a`)
 - 추가 1건: `Bundled quality skills` 절. 번들된 엔지니어링 규율 스킬을 언제 로드하고, 워커에게 디스패치할 때 태스크 spec에 무엇을 주입할지 정한다.
 - 추가 2건: `Coordinator field notes` 절. 업스트림 가이드가 다루지 않아 코디네이터가 실제로 시간을 버린 두 지점을 적었다 — `task-create`의 `--task-title`/`--display-name` 미문서화(없으면 spec 첫 줄에서 제목을 파생한다), `worker-list`의 `legacy_ambiguous` 행이 누수가 아니라는 것. Orca 1.4.191 소스(`src/shared/orchestration-task-display.ts`, `src/main/runtime/orchestration/db/worker-terminal/worker-terminal-release.ts`)와 실제 CLI 실행으로 확인했다(2026-08-29). 업스트림 가이드가 이 둘을 문서화하면 이 절은 지운다.
 - 이 절이 유일한 정본이다. `orca skills get orchestration`이 서비스하는 가이드에는 품질 스킬 라우팅이 없으므로(업스트림 가이드 435줄에 해당 내용 없음), 이 스킬 파일만으로 자립 동작하도록 규약 본문을 그대로 담았다. Orca 소스를 수정할 필요가 없다.

@@ -155,8 +155,8 @@ orca orchestration task-list --json | grep -c '<<'   # 0이어야 한다
 
 | 스킬 | 상류 | 커밋 | 라이선스 |
 |---|---|---|---|
-| `orchestration` | `stablyai/orca` | `94e75866` | 상류 저장소 라이선스 |
-| `orca-cli` | `stablyai/orca` | `94e75866` | 상류 저장소 라이선스 |
+| `orchestration` | `stablyai/orca` | `c5d43b8a` | 상류 저장소 라이선스 |
+| `orca-cli` | `stablyai/orca` | `c5d43b8a` | 상류 저장소 라이선스 |
 | `karpathy-guidelines` | `multica-ai/andrej-karpathy-skills` | `2c606141936f` | MIT |
 | `test-driven-development` | `obra/superpowers` | `b36e0829c6d0` | MIT (Jesse Vincent) |
 | `systematic-debugging` | `obra/superpowers` | `b36e0829c6d0` | MIT (Jesse Vincent) |
