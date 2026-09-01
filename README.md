@@ -14,10 +14,16 @@
 
 ## 무엇이 들어 있나
 
-### Orca 번들 스킬 — `stablyai/orca` `3d0bd6a3` (2026-08-30)
+### Orca 번들 스킬 — `stablyai/orca` `c5d43b8a` (2026-08-31)
 
-Orca가 `orca skills install`로 설치하는 스킬 전부다. Orca 1.4.192 기준 8종이며,
-`orca skills list --json`이 내놓는 목록과 일치한다.
+Orca가 `orca skills install`로 설치하는 스킬 전부다. 8종이고, Orca 1.4.192의
+`orca skills list --json`이 내놓는 목록과 이름이 일치한다.
+
+**본문은 설치된 앱보다 상류 쪽이 앞서 있을 수 있다.** 2026-08-31 시점에 Orca 1.4.192가
+번들하는 `computer-use`·`orca-cli`·`orchestration` description은 아직 상류 `3d0bd6a3`
+판이고, 여기 담긴 것은 `c5d43b8a` 판이다. 바뀐 것은 computer-use와 orca-cli의 역할
+경계를 가르는 라우팅 문구뿐이라 복구용으로 쓰는 데는 지장이 없다. 앱이 상류를 따라잡으면
+같아진다.
 
 | 스킬 | `orca_skill`이 쓰나 |
 |---|---|
