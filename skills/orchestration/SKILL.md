@@ -106,6 +106,12 @@ Naming a skill in the spec and expecting it to load silently drops the gate on s
    단, 빌드 설정·의존성 매니페스트·공통 설정처럼 다른 워커도 건드릴 파일을 고쳐야 하면
    가정으로 처리하지 말고 5번의 ask로 묻는다. 같은 워크트리에서 다른 워커가 동시에
    작업 중일 수 있고, 그 파일을 양쪽이 고치면 서로의 작업을 덮는다. [karpathy-guidelines]
+1-1. 산출물이 아닌 파일 - 계획, 중간 분석, 리뷰 노트, 장문 리포트 - 은 전부
+   `.orca/artifacts/<task_id>/` 아래에 쓴다. 폴더가 없으면 만든다. 저장소 루트,
+   `docs/`, 읽고 있던 코드 옆에 두지 않고, 다른 이름의 폴더를 새로 만들지 않는다.
+   태스크가 산출물로 요구한 것(소스, 테스트, 문서)은 작업 파일이 아니므로 프로젝트가
+   두는 자리에 둔다. taskId를 받지 못했다면 `.orca/artifacts/` 아래에 작업을 알아볼 수
+   있는 짧은 폴더명을 쓴다. 장문 리포트를 냈으면 그 경로를 6번의 --report-path로 넘긴다.
 2. <<태스크 유형에 맞는 줄을 아래 표에서 골라 이 자리에 넣는다>>
 3. 작업 도중 버그, 테스트 실패, 예상 밖 동작을 만나면 수정을 제안하기 전에 근본 원인을
    추적한다. 한 번에 하나씩 고친다 - 여러 변경을 묶어 시도하면 무엇이 효과가 있었는지
@@ -149,14 +155,53 @@ Never dispatch a spec that still contains the `<<...>>` placeholder.
 The numbering is the worker's time order, so read it top to bottom: settle scope (1), do the
 work under the rule for this task type (2), trace root causes for anything that surprises you
 along the way (3), verify (4), and report (5-6). Item 1 is first because a test written before
-scope is settled tests the wrong thing. Item 2 holds the task-type rule because that is when
-the work itself happens. Item 3 is not a stage but a conditional rule that fires whenever a
-bug surfaces mid-task. Item 4 is the gate immediately before `worker_done`.
+scope is settled tests the wrong thing. Item 1-1 rides with it because where the working
+files go is part of settling the setup, and it is numbered under 1 rather than appended at
+the end so the later numbers keep the meaning the rest of this distribution refers to. Item 2
+holds the task-type rule because that is when the work itself happens. Item 3 is not a stage
+but a conditional rule that fires whenever a bug surfaces mid-task. Item 4 is the gate
+immediately before `worker_done`.
 
 Item 4 binds every task type, not just the ones that run a command. A review or an
 investigation has no test suite to execute, but it still makes claims, and an unreproduced
 claim is a guess. Reading code and saying what it appears to do is not the same as confirming
 it does that — the task-type rows for those two say so explicitly.
+
+### Where working files go
+
+A plan, a scratch analysis, a review note, a long-form report — none of these are what the
+task was asked to deliver, and each worker left to its own judgment picks its own location
+and its own name. A run across four tasks then leaves `PLAN-auth.md` at the repo root,
+`notes.md` beside whatever code that worker happened to be reading, and two more the
+coordinator never sees. The user sorts them out of a diff that should have carried code only.
+
+Item 1-1 puts all of it under `.orca/artifacts/<task_id>/` in the worktree the task runs in.
+
+- **`.orca/` is already Orca's workspace namespace** — `.orca/drops`, `.orca/templates`,
+  `.orca/browser-downloads`, `.orca/issue-command`. One ignore entry covers every task's
+  scaffolding. Orca does write `.orca` into `.gitignore`, but only when the app itself
+  creates something under that directory, so a repo that has never hit one of those paths
+  will not have the entry. **Check it once per repo before dispatching**, or the rule moves
+  the clutter without removing it from `git status`:
+  `grep -qxF .orca .gitignore || echo .orca >> .gitignore`
+- **The folder is named with the task id, not a description.** That id is the one identifier
+  the coordinator, the `worker_done` payload, and `dispatch-show` already share, so any stray
+  file traces back to the task that wrote it. Inside the folder, names are free.
+- **Deliverables are exempt.** Source, tests, and documentation the task was asked to produce
+  belong where the project keeps them. This rule covers only the scaffolding a task writes in
+  order to do its job.
+- **`--report-path` points inside it.** `--report-path .orca/artifacts/<task_id>/report.md`
+  is what lets the coordinator open the long form without searching for it, which is the
+  reason that flag exists.
+
+**The coordinator has to inject this.** The dispatch preamble does not carry it, so a worker
+that was never told writes wherever it likes — which is the whole failure this rule exists to
+stop. It is inside the QUALITY CONTRACT block for that reason: one block to append, not two.
+
+The served guide does not carry this rule either. Nothing in `ORCA skills get orchestration`
+tells a worker where to put a plan file; `--report-path` appears there as an optional flag
+with no convention attached. Drop this section if a future guide starts specifying one, and
+follow the guide instead.
 
 ### Line 5 is not optional
 
@@ -273,11 +318,12 @@ command surface this older binary may not support.
 
 ## 출처와 커스터마이징 기록
 
-Orca 사내 배포판이 번들한 스킬이다. **업스트림 원문에 `Bundled quality skills` 절, `Coordinator field notes` 절, 그리고 이 절만 추가했고, 나머지 본문과 frontmatter는 손대지 않았다.**
+Orca 사내 배포판이 번들한 스킬이다. **업스트림 원문에 `Bundled quality skills` 절, `Where working files go` 절, `Coordinator field notes` 절, 그리고 이 절만 추가했고, 나머지 본문과 frontmatter는 손대지 않았다.**
 
 - 출처: `stablyai/orca` · `skills/orchestration/SKILL.md` (커밋 `c5d43b8a`)
 - 추가 1건: `Bundled quality skills` 절. 번들된 엔지니어링 규율 스킬을 언제 로드하고, 워커에게 디스패치할 때 태스크 spec에 무엇을 주입할지 정한다.
-- 추가 2건: `Coordinator field notes` 절. 업스트림 가이드가 다루지 않아 코디네이터가 실제로 시간을 버린 두 지점을 적었다 — `task-create`의 `--task-title`/`--display-name` 미문서화(없으면 spec 첫 줄에서 제목을 파생한다), `worker-list`의 `legacy_ambiguous` 행이 누수가 아니라는 것. Orca 1.4.191 소스(`src/shared/orchestration-task-display.ts`, `src/main/runtime/orchestration/db/worker-terminal/worker-terminal-release.ts`)와 실제 CLI 실행으로 확인했다(2026-08-29). 업스트림 가이드가 이 둘을 문서화하면 이 절은 지운다.
-- 이 절이 유일한 정본이다. `orca skills get orchestration`이 서비스하는 가이드에는 품질 스킬 라우팅이 없으므로(업스트림 가이드 435줄에 해당 내용 없음), 이 스킬 파일만으로 자립 동작하도록 규약 본문을 그대로 담았다. Orca 소스를 수정할 필요가 없다.
+- 추가 2건: `Where working files go` 절과 규약 1-1번. 산출물이 아닌 작업 파일을 `.orca/artifacts/<task_id>/`에만 쓰게 한다. 상류 소스(`skill-guides/orchestration.md`)에 같은 취지의 `Work Artifacts` 절이 **미커밋 상태로** 존재하지만(2026-09-01 확인), HEAD에도 상류 main `c5d43b8a`에도 없고 설치된 1.4.192가 서비스하는 가이드에도 없다. 규약 번호를 1-1로 둔 것은 뒤 번호를 밀지 않기 위해서다 — README와 `docs/how-it-works.md`가 2~6번을 그 번호로 참조한다. 상류가 이 규약을 릴리스하면 이 절을 지우고 가이드를 따른다.
+- 추가 3건: `Coordinator field notes` 절. 업스트림 가이드가 다루지 않아 코디네이터가 실제로 시간을 버린 두 지점을 적었다 — `task-create`의 `--task-title`/`--display-name` 미문서화(없으면 spec 첫 줄에서 제목을 파생한다), `worker-list`의 `legacy_ambiguous` 행이 누수가 아니라는 것. Orca 1.4.191 소스(`src/shared/orchestration-task-display.ts`, `src/main/runtime/orchestration/db/worker-terminal/worker-terminal-release.ts`)와 실제 CLI 실행으로 확인했다(2026-08-29). 업스트림 가이드가 이 둘을 문서화하면 이 절은 지운다.
+- 이 절이 유일한 정본이다. `orca skills get orchestration`이 서비스하는 가이드에는 품질 스킬 라우팅도 작업 파일 위치 규약도 없으므로(업스트림 가이드 435줄에 해당 내용 없음), 이 스킬 파일만으로 자립 동작하도록 규약 본문을 그대로 담았다. Orca 소스를 수정할 필요가 없다.
 - frontmatter의 `description`은 업스트림 그대로다. Orca가 이 필드로 스킬을 라우팅하므로 바꾸지 않는다.
 - **주의:** 이 스킬은 업스트림과 이름·경로가 같다. `orca skills update --skill orchestration`을 실행하면 위 커스터마이징이 업스트림 원문으로 덮인다. 갱신은 이 저장소에서 내려받는 방식으로만 한다.
