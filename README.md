@@ -33,12 +33,23 @@ skills/
 | 경로 (Windows) | 경로 (macOS/Linux/WSL) | 넣는 이유 |
 |---|---|---|
 | `%USERPROFILE%\.agents\skills\` | `~/.agents/skills/` | Orca가 "Agent skills home"으로 인식하는 공용 경로. **필수** |
-| `%USERPROFILE%\.claude\skills\` | `~/.claude/skills/` | Claude 워커가 읽는 경로 |
-| `%USERPROFILE%\.config\opencode\skills\` | `~/.config/opencode/skills/` | opencode 워커가 읽는 경로 |
+| `%USERPROFILE%\.claude\skills\` | `~/.claude/skills/` | Claude Code가 읽는 경로. Claude Code는 `.agents\skills`를 읽지 않으므로 따로 필요하다 |
 
-**세 곳 모두 넣는 것을 권한다.** `.agents\skills`는 Orca가 스킬을 인식하는 경로이고,
-나머지 둘은 워커 에이전트가 실제로 스킬을 로드하는 경로다. 쓰지 않는 에이전트의 경로는
-건너뛰어도 된다.
+**opencode 전용 경로(`~/.config/opencode/skills`)는 만들지 않는다.** opencode는 위 두 곳을
+이미 스캔한다 — `~/.claude/skills`, `~/.agents/skills`, `~/.config/opencode/skills`를 모두
+읽고, 프로젝트 쪽의 `.claude/skills`, `.agents/skills`, `.opencode/skills`도 함께 본다.
+세 곳에 같은 스킬 이름을 두면 **어느 사본이 로드될지가 실행마다 갈린다.** opencode의 스킬
+로더는 동시성 제한 없이 파일을 읽고 같은 이름은 나중에 끝난 쪽이 이기기 때문이다. 실제로
+6종을 세 경로에 모두 넣고 `opencode debug skill`을 5회 돌리면 `orchestration`이 잡히는
+사본이 `.agents`와 `.config/opencode` 사이에서 왔다 갔다 한다(opencode 1.18.26에서 확인).
+
+이전 판을 따라 `~/.config/opencode/skills`에 이미 복사했다면 **거기 있는 6개 폴더를
+지운다.** 지워도 opencode는 남은 두 경로에서 그대로 찾는다.
+
+두 곳은 그래도 남으므로 **한쪽만 고치지 않는다.** 항상 아래 스크립트로 두 경로를 함께
+갱신하고, 확인도 두 사본 모두에 대해 한다. 사본 자체를 없애고 싶으면
+`.claude\skills\<이름>`을 `.agents\skills\<이름>`으로 향하는 심볼릭 링크(Windows는
+junction)로 만든다. opencode도 Claude Code도 링크를 따라간다.
 
 복사 후 이런 모양이 되어야 한다:
 
@@ -62,8 +73,7 @@ skills/
 $src = ".\skills"
 foreach ($dst in @(
     "$env:USERPROFILE\.agents\skills",
-    "$env:USERPROFILE\.claude\skills",
-    "$env:USERPROFILE\.config\opencode\skills"
+    "$env:USERPROFILE\.claude\skills"
 )) {
     New-Item -ItemType Directory -Path $dst -Force | Out-Null
     Get-ChildItem $src -Directory | ForEach-Object {
@@ -79,31 +89,51 @@ foreach ($dst in @(
 
 복사했다고 동작하는 것이 아니다. 아래 순서로 확인한다.
 
+**먼저 에이전트를 재시작한다.** opencode도 Claude Code도 스킬을 시작할 때 한 번만 읽고
+핫리로드하지 않는다. 이미 떠 있는 세션과 Orca가 띄워 둔 워커 터미널에는 복사 결과가
+반영되지 않으므로, 확인 전에 모두 종료했다가 다시 연다. **복사한 뒤 아무것도 안 보인다면
+십중팔구 이것이다.**
+
 ```bash
 # 1. Orca가 스킬을 인식하는가
 orca skills installed | grep -E 'karpathy|test-driven|systematic-debug|verification-before'
 
-# 2. orchestration에 라우팅이 실렸는가 (1 이상이어야 한다)
-grep -c 'QUALITY CONTRACT' ~/.agents/skills/orchestration/SKILL.md
+# 2. 설치한 사본 전부에 라우팅이 실렸는가 (사본마다 1 이상이어야 한다)
+grep -c 'QUALITY CONTRACT' ~/.agents/skills/orchestration/SKILL.md \
+                           ~/.claude/skills/orchestration/SKILL.md
+
+# 3. opencode가 스킬을 보는가 — 이름과 함께 어느 사본을 잡았는지도 나온다
+opencode debug skill > /tmp/oc-skills.json
+grep -n 'orchestration/SKILL.md' /tmp/oc-skills.json
 ```
 
-PowerShell이면 2번은 이렇게:
+3번이 아무것도 출력하지 않으면 opencode가 orchestration을 못 찾은 것이다. `debug skill`은
+`<built-in>`인 `customize-opencode`까지 포함해 opencode가 실제로 로드한 전부를 JSON으로
+찍으므로, 여기 없으면 워커에도 없다. 출력이 크니 파이프로 바로 넘기지 말고 파일로 받는다.
+
+PowerShell이면 2·3번은 이렇게:
 
 ```powershell
-Select-String -Path "$env:USERPROFILE\.agents\skills\orchestration\SKILL.md" -Pattern 'QUALITY CONTRACT'
+Select-String -Pattern 'QUALITY CONTRACT' -Path @(
+    "$env:USERPROFILE\.agents\skills\orchestration\SKILL.md",
+    "$env:USERPROFILE\.claude\skills\orchestration\SKILL.md"
+)
+opencode debug skill > "$env:TEMP\oc-skills.json"
+Select-String -Path "$env:TEMP\oc-skills.json" -Pattern 'orchestration[\\/]SKILL\.md'
 ```
 
-**3. 코디네이터가 만든 spec에 플레이스홀더가 남지 않았는지 본다.** 규약 2번은 태스크
+**4. 코디네이터가 만든 spec에 플레이스홀더가 남지 않았는지 본다.** 규약 2번은 태스크
 유형에 따라 채워야 하는 자리다. `<<`가 남은 채로 디스패치되면 워커는 그 줄을 규칙이 아닌
-빈칸으로 읽는다.
+빈칸으로 읽는다. 태스크가 하나도 없으면 통과가 아니라 무의미한 확인이니, 실제로 태스크를
+만든 뒤에 본다.
 
 ```bash
 orca orchestration task-list --json | grep -c '<<'   # 0이어야 한다
 ```
 
-**4. 실제 디스패치 1건으로 확인한다.** 워커의 `worker_done` 보고서(`--body`)에 실행한 검증
+**5. 실제 디스패치 1건으로 확인한다.** 워커의 `worker_done` 보고서(`--body`)에 실행한 검증
 명령과 그 결과가 들어 있는지 본다. 없으면 규약이 spec에 실리지 않은 것이다.
-1~3번이 통과해도 코디네이터가 spec에 블록을 붙이지 않으면 아무 효과가 없으므로,
+1~4번이 통과해도 코디네이터가 spec에 블록을 붙이지 않으면 아무 효과가 없으므로,
 이것이 진짜 검증이다.
 
 ## 작업 파일은 `.orca/artifacts/` 안에만
@@ -149,12 +179,16 @@ task id를 우선하는 이유는 코디네이터와 `worker_done` 페이로드�
 **1. spec 인라인 (정본).** 코디네이터가 `task-create --spec`에 QUALITY CONTRACT 블록을
 이어붙인다. 워커 종류와 무관하게 프롬프트로 들어가므로 opencode 워커에도 적용된다.
 
-**2. 스킬 자동 로드 (보강).** Claude 워커는 스킬 description을 보고 필요한 시점에 스스로
-로드한다. 각 스킬에는 `Orca dispatch 컨텍스트` 절이 있어 이 경로로 로드되어도 워커
-환경에 맞게 동작한다.
+**2. 스킬 자동 로드 (보강).** 워커가 스킬 description을 보고 필요한 시점에 스스로 로드한다.
+각 스킬에는 `Orca dispatch 컨텍스트` 절이 있어 이 경로로 로드되어도 워커 환경에 맞게
+동작한다. **opencode에도 이 경로가 있다** — 시스템 프롬프트에 `<available_skills>` 목록이
+실리고 `skill` 툴로 본문을 읽으며, `/orchestration`처럼 슬래시로도 부를 수 있다
+(opencode 1.18.26에서 확인).
 
 경로 1만으로도 최소 게이트가 서고, 경로 2가 붙으면 세부 규칙까지 적용된다.
-**스킬 이름만 적고 규약 본문을 빼면 안 되는 이유가 이것이다** — opencode에는 경로 2가 없다.
+**그래도 스킬 이름만 적고 규약 본문을 빼면 안 된다.** 경로 2는 워커 쪽 설치 상태에
+의존한다 — 사본이 낡았거나, 설치 뒤 재시작을 안 했거나, `permission.skill`이 막고 있으면
+조용히 빠진다. 경로 1은 그 무엇에도 의존하지 않는 유일한 경로다.
 
 ### 라우팅
 
@@ -323,6 +357,17 @@ Iron Law는 **주장보다 증거가 먼저**다. Gate Function 5단계를 통�
 `orca skills update --skill orchestration`을 실행하면 커스터마이징이 업스트림 원문으로
 덮인다. 갱신은 이 저장소에서 내려받아 다시 복사하는 방식으로만 한다.
 
+**덮는 경로는 `update` 하나가 아니다.** `orca skills install --skill orchestration`도,
+Orca Settings의 스킬 설치·업데이트 버튼도 같은 `npx skills ...` 명령으로 귀결되고,
+기본 대상이 `~/.agents/skills`다. 이 번들이 필수라고 지정한 바로 그 경로이고, opencode가
+읽는 경로이기도 하다. 되돌아간 사본이 남으면 확인 2번이 그 자리에서 0을 낸다.
+
+**description은 1024자를 넘기지 않는다.** 현재 `orchestration`은 1038자다. opencode
+1.18.26은 이를 그대로 로드하지만(확인함), Agent Skills 스펙의 상한은 1024자이고 Codex와
+Copilot CLI는 넘는 스킬을 **경고 없이 버린다**. 이 번들은 `~/.claude/skills`처럼 다른
+에이전트와 공유하는 경로에 들어가므로, 상류를 반영할 때 description 길이를 함께 본다
+(`orca-cli`는 1015자로 상한 코앞이다).
+
 ## Windows 주의사항
 
 - `systematic-debugging/find-polluter.sh`는 bash가 필요하다(Git Bash 또는 WSL). 없으면
@@ -330,6 +375,9 @@ Iron Law는 **주장보다 증거가 먼저**다. Gate Function 5단계를 통�
 - 저장소 루트에서 절대 경로로 호출한다. npm 저장소가 아니면 `TEST_CMD`를 지정한다:
   `TEST_CMD='pnpm vitest run' bash <skills-dir>/systematic-debugging/find-polluter.sh '.git' 'src/**/*.test.ts'`
 - 나머지 스킬은 순수 텍스트 지침이라 OS 의존성이 없다.
+- **워커가 WSL 안에서 돌면 `%USERPROFILE%` 경로로는 안 보인다.** WSL의 `~`는
+  `/home/<user>`이고 Windows 홈이 아니다. Orca가 WSL 세션을 관리하는 구성이라면
+  WSL 홈에도 같은 두 경로(`~/.agents/skills`, `~/.claude/skills`)를 만들어야 한다.
 
 ## 상류 원본
 
