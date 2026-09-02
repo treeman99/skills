@@ -44,8 +44,8 @@ skills/
 스킬을 세 경로에 모두 넣고 `opencode debug skill`을 5회 돌리면 `orchestration`이 잡히는
 사본이 `.agents`와 `.config/opencode` 사이에서 왔다 갔다 한다(opencode 1.18.26에서 확인).
 
-이전 판을 따라 `~/.config/opencode/skills`에 이미 복사했다면 **거기 있는 6개 폴더를
-지운다.** 지워도 opencode는 남은 두 경로에서 그대로 찾는다.
+이전 판을 따라 `~/.config/opencode/skills`에 이미 복사했다면 **거기 있는 이 번들의
+폴더를 지운다.** 지워도 opencode는 남은 두 경로에서 그대로 찾는다.
 
 두 곳은 그래도 남으므로 **한쪽만 고치지 않는다.** 항상 아래 스크립트로 두 경로를 함께
 갱신하고, 확인도 두 사본 모두에 대해 한다. 사본 자체를 없애고 싶으면
@@ -224,7 +224,7 @@ flowchart TD
     SELF --> K["규약 1 · 범위 확정<br/>karpathy-guidelines"]
     WK --> K
 
-    K --> L["규약 1-2 · 해법 크기<br/>ponytail"]
+    K --> L["규약 1-2 · 해법 크기<br/>ponytail · 코드 작업만"]
     L --> T["규약 2 · 유형별 규칙<br/>test-driven-development"]
     T --> IMPL["작업 수행"]
     IMPL --> V["규약 4 · 완료 게이트<br/>verification-before-completion"]
@@ -279,8 +279,9 @@ problem"이라고 못 박는 이유가 이것이다 — 이해를 건너뛰고 �
 | 상류 본문의 "설명은 최대 3줄" | **규약 6번이 이긴다.** 검증 명령과 출력은 전부 `--body`에 싣는다 |
 | 리뷰·조사 태스크 | 적용하지 않는다. 크기를 정할 해법이 없다 |
 
-명시하지 않으면 워커는 같은 무게의 규칙 둘을 받아 나중에 본 쪽을 따른다. opencode
-워커에서 실제로 그렇게 갈린다.
+명시하지 않으면 워커는 같은 무게의 규칙 둘을 받는다. 어느 쪽을 따를지는 그때그때
+갈리고, 그 결정이 spec이 아니라 워커의 읽는 순서에서 나온다. 우선순위 문장이 그것을
+spec 쪽으로 되돌린다.
 
 레벨(`lite`/`full`/`ultra`)은 디스패치에서 **full 고정**이다. `/ponytail` 슬래시 명령도
 "stop ponytail"이라고 말해 줄 사람도 워커 터미널에는 없다.

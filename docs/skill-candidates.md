@@ -1,7 +1,8 @@
 # 추가 도입 후보 스킬 검토
 
-현재 번들(`karpathy-guidelines`, `test-driven-development`, `systematic-debugging`,
-`verification-before-completion`)에 더할 만한 스킬을 조사한 결과다.
+현재 번들(`karpathy-guidelines`, `ponytail`, `test-driven-development`,
+`systematic-debugging`, `verification-before-completion`)에 더할 만한 스킬을 조사한
+결과다.
 
 조사 대상은 실제 저장소를 받아서 확인했다. 블로그 요약이 아니라 `SKILL.md` 본문을 읽고
 판정했다.
@@ -37,6 +38,11 @@ Claude Code의 서브에이전트를 띄우는 스킬은 이 경계를 넘는다
 | `writing-skills` | 보류 | 스킬 제작용, 개발 워크플로와 무관 |
 | `using-superpowers` | 제외 | superpowers 설치 전제의 인덱스 스킬 |
 | `finishing-a-development-branch` | 보류 | 병합 정책이 회사 규칙에 달림 |
+| `ponytail` | **도입됨** | 이 조사 밖에서 별도로 검토해 규약 1-2번으로 들어갔다 |
+
+`ponytail`(`DietrichGebert/ponytail`)은 위 두 저장소가 아니라 별도 요청으로 검토했고,
+번들에 들어갔다. 판정 근거와 기존 규약과 겹치는 자리의 우선순위는 [README의 스킬별 실행
+절](../README.md#ponytail--사다리에서-처음-성립하는-칸에-멈춘다)에 있다.
 
 ---
 
