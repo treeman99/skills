@@ -6,7 +6,7 @@
 
 | 브랜치 | 내용 | 용도 |
 |---|---|---|
-| `main` (여기) | 업스트림 원본 12종 | 복구·대조 기준선 |
+| `main` (여기) | 업스트림 원본 18종 | 복구·대조 기준선 |
 | `orca_skill` | 커스터마이징 6종 | 실제 사용 |
 
 **여기서는 아무것도 수정하지 않는다.** `skills/` 아래 파일은 아래 표의 커밋에 있는
@@ -47,6 +47,7 @@ Orca가 `orca skills install`로 설치하는 스킬 전부다. 8종이고, Orca
 | `test-driven-development` | `obra/superpowers` | `b36e0829c6d0` | MIT (Jesse Vincent) |
 | `systematic-debugging` | `obra/superpowers` | `b36e0829c6d0` | MIT (Jesse Vincent) |
 | `verification-before-completion` | `obra/superpowers` | `b36e0829c6d0` | MIT (Jesse Vincent) |
+| `ponytail` 외 5종 | `DietrichGebert/ponytail` | `2ed6c52c9d7e` | MIT (Dietrich Gebert) |
 
 `orca_skill`은 이 4종에 `Orca dispatch 컨텍스트` 절과 출처절을 덧붙여 쓴다. 무엇이
 덧붙었는지는 이 브랜치와 diff를 뜨면 그대로 나온다.
@@ -59,11 +60,23 @@ git diff main:skills/karpathy-guidelines/SKILL.md orca_skill:skills/karpathy-gui
 `test-*.md`가 그대로 들어 있다. `orca_skill`은 이것들을 빼고 배포하지만, 여기서는
 원문을 손대지 않는 것이 원칙이라 남겨 둔다.
 
+**ponytail은 6종을 다 담고 `orca_skill`은 `ponytail` 하나만 배포한다.** 나머지 다섯
+(`ponytail-review`, `-audit`, `-debt`, `-gain`, `-help`)은 사람이 슬래시로 직접 부르는
+용도라 orchestration 라우팅에 걸 자리가 없다. 나중에 쓰기로 하면 원문이 여기 있다.
+
+**상류 저장소의 훅·플러그인은 담지 않는다.** ponytail은 `hooks/`와 opencode 플러그인으로
+매 턴 규칙을 주입하는 경로도 제공하지만, 이 배포판은 `SKILL.md`만 쓴다. 워커 호스트마다
+플러그인을 설정해야 하고, Claude Code용 `SessionStart` 훅이 statusline 설정을 제안하는
+지시를 세션에 주입해서 무인 워커의 작업을 흐트러뜨리기 때문이다.
+
 ### 라이선스 원문
 
 `licenses/superpowers-LICENSE` — `obra/superpowers` 저장소 루트의 MIT 라이선스 전문.
 상류가 스킬 폴더 안에 라이선스 파일을 두지 않으므로, 스킬 폴더를 원문과 바이트 단위로
 같게 유지하려고 밖에 뒀다.
+
+`licenses/ponytail-LICENSE` — `DietrichGebert/ponytail` 저장소 루트의 MIT 라이선스
+전문. 여기도 상류가 스킬 폴더 안에 라이선스 파일을 두지 않는다.
 
 `multica-ai/andrej-karpathy-skills`는 저장소에 LICENSE 파일이 없다. MIT임은
 `.claude-plugin/plugin.json`의 `"license": "MIT"`와 `SKILL.md` frontmatter의
@@ -87,7 +100,7 @@ orca skills get orchestration > skills/orchestration/SKILL.md   # 틀렸다
 
 ## 무엇이 설치되어 있나
 
-`orca_skill` 브랜치를 설치하면 스킬 홈에 6개가 들어간다. 성격이 둘로 나뉘고,
+`orca_skill` 브랜치를 설치하면 스킬 홈에 7개가 들어간다. 성격이 둘로 나뉘고,
 **복구 방법도 다르다.**
 
 | 스킬 | 원래 있던 것인가 | 복구 방법 |
@@ -98,10 +111,11 @@ orca skills get orchestration > skills/orchestration/SKILL.md   # 틀렸다
 | `test-driven-development` | 아니오 | 지운다 |
 | `systematic-debugging` | 아니오 | 지운다 |
 | `verification-before-completion` | 아니오 | 지운다 |
+| `ponytail` | 아니오 | 지운다 |
 
 **핵심:** 앞의 둘은 지우기만 하면 안 된다. Orca가 원래 쓰던 스킬이라 없으면
 orchestration 기능 자체를 못 쓴다. 원본으로 채워 넣어야 한다.
-뒤의 넷은 원래 없던 것이라 지우면 끝이다.
+뒤의 다섯은 원래 없던 것이라 지우면 끝이다.
 
 ## 설치 경로
 
@@ -121,9 +135,9 @@ orchestration 기능 자체를 못 쓴다. 원본으로 채워 넣어야 한다.
 
 ```bash
 # 1. 추가했던 품질 스킬 4종을 지운다
-rm -rf ~/.agents/skills/{karpathy-guidelines,test-driven-development,systematic-debugging,verification-before-completion}
-rm -rf ~/.claude/skills/{karpathy-guidelines,test-driven-development,systematic-debugging,verification-before-completion}
-rm -rf ~/.config/opencode/skills/{karpathy-guidelines,test-driven-development,systematic-debugging,verification-before-completion}
+rm -rf ~/.agents/skills/{karpathy-guidelines,test-driven-development,systematic-debugging,verification-before-completion,ponytail}
+rm -rf ~/.claude/skills/{karpathy-guidelines,test-driven-development,systematic-debugging,verification-before-completion,ponytail}
+rm -rf ~/.config/opencode/skills/{karpathy-guidelines,test-driven-development,systematic-debugging,verification-before-completion,ponytail}
 
 # 2. 커스터마이징한 orchestration, orca-cli 도 지운다
 rm -rf ~/.agents/skills/{orchestration,orca-cli}
@@ -138,7 +152,7 @@ PowerShell:
 
 ```powershell
 $names = @('karpathy-guidelines','test-driven-development','systematic-debugging',
-           'verification-before-completion','orchestration','orca-cli')
+           'verification-before-completion','ponytail','orchestration','orca-cli')
 foreach ($root in @("$env:USERPROFILE\.agents\skills",
                     "$env:USERPROFILE\.claude\skills",
                     "$env:USERPROFILE\.config\opencode\skills")) {
@@ -174,7 +188,7 @@ test -f skills/orchestration/SKILL.md && test -f skills/orca-cli/SKILL.md \
 # 3. 추가했던 품질 스킬 4종을 지우고, orchestration/orca-cli 를 원본으로 교체한다
 for root in ~/.agents/skills ~/.claude/skills ~/.config/opencode/skills; do
   [ -d "$root" ] || continue
-  rm -rf "$root"/{karpathy-guidelines,test-driven-development,systematic-debugging,verification-before-completion}
+  rm -rf "$root"/{karpathy-guidelines,test-driven-development,systematic-debugging,verification-before-completion,ponytail}
   rm -rf "$root"/orchestration "$root"/orca-cli
   cp -R skills/orchestration "$root"/orchestration
   cp -R skills/orca-cli      "$root"/orca-cli
@@ -313,6 +327,21 @@ done
 rm -rf skills/karpathy-guidelines
 cp -R "$tmp/ka/skills/karpathy-guidelines" skills/karpathy-guidelines
 cp "$tmp/sp/LICENSE" licenses/superpowers-LICENSE
+rm -rf "$tmp"
+git status
+```
+
+### ponytail
+
+```bash
+tmp=$(mktemp -d)
+git clone --filter=blob:none --depth 1 https://github.com/DietrichGebert/ponytail "$tmp/pt"
+git -C "$tmp/pt" log -1 --format='%H %ad' --date=short   # 이 커밋을 위 표에 적는다
+
+for n in ponytail ponytail-review ponytail-audit ponytail-debt ponytail-gain ponytail-help; do
+  rm -rf "skills/$n"; cp -R "$tmp/pt/skills/$n" "skills/$n"
+done
+cp "$tmp/pt/LICENSE" licenses/ponytail-LICENSE
 rm -rf "$tmp"
 git status
 ```
