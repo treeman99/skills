@@ -116,13 +116,14 @@ convention attached. Drop this section if a future guide specifies one, and foll
 
 ## Bundled quality skills
 
-This distribution ships four engineering-discipline skills alongside orchestration. They are
+This distribution ships five engineering-discipline skills alongside orchestration. They are
 part of how work gets done here, not optional extras, and they apply whether you are doing
 the work yourself or dispatching it to workers.
 
 | Skill | Fires when |
 |---|---|
 | `karpathy-guidelines` | Any coding task, from the moment scope is being settled |
+| `ponytail` | Scope is settled and the solution shape is being picked, before any code is written |
 | `test-driven-development` | Before writing or changing implementation code |
 | `systematic-debugging` | A bug, test failure, or unexpected behavior appears |
 | `verification-before-completion` | Before any completion claim, `worker_done`, commit, or PR |
@@ -141,9 +142,10 @@ under `.orca/artifacts/` like anyone else's.
 
 ### If you are dispatching to workers
 
-Workers differ in how they load skills. A Claude worker resolves skills from their
-descriptions; opencode and other agents either lack that mechanism or apply it differently.
-Naming a skill in the spec and expecting it to load silently drops the gate on some workers.
+Do not rely on the worker loading the skill. Claude and opencode both resolve skills from
+their descriptions, but that path depends on the worker host: a stale copy, an agent that was
+not restarted after install, or a permission rule silently removes it. Naming a skill in the
+spec and expecting it to load drops the gate with no signal that it happened.
 
 **Inline the contract into the spec.** Append this verbatim after the task body in
 `task-create --spec`, keeping the wording — workers key off this shape:
@@ -161,6 +163,18 @@ Naming a skill in the spec and expecting it to load silently drops the gate on s
    태스크가 산출물로 요구한 것(소스, 테스트, 문서)은 작업 파일이 아니므로 프로젝트가
    두는 자리에 둔다. taskId를 받지 못했다면 `.orca/artifacts/` 아래에 작업을 알아볼 수
    있는 짧은 폴더명을 쓴다. 장문 리포트를 냈으면 그 경로를 6번의 --report-path로 넘긴다.
+1-2. 코드를 쓰거나 고치는 태스크는, 무엇을 만들지 정할 때 아래 사다리에서 처음 성립하는
+   칸에 멈춘다. (1) 존재해야 하는가 - 추측성 요구면 만들지 말고 한 줄로 그렇게 적는다.
+   (2) 이 코드베이스에 이미 있는가 - 있으면 재사용한다. (3) 표준 라이브러리가 하는가.
+   (4) 플랫폼 기본 기능이 덮는가. (5) 이미 설치된 의존성이 해결하는가 - 몇 줄로 되는
+   일에 새 의존성을 넣지 않는다. (6) 한 줄로 되는가. (7) 아니면 동작하는 최소 구현.
+   요청하지 않은 추상화와 나중을 위한 스캐폴딩은 만들지 않는다. 사다리는 문제를 이해한
+   뒤에 오르는 것이지 이해를 대신하지 않는다 - 고칠 코드와 실제 흐름을 먼저 읽는다.
+   입력 검증, 데이터 유실을 막는 에러 처리, 보안, 접근성, 스펙이 명시한 것은 어느
+   칸에서도 깎지 않는다. [ponytail]
+   이 항목은 해법의 크기만 정한다. 테스트를 쓸지와 그 순서는 2번이 정하고 2번이 이긴다.
+   보고 분량은 6번이 정한다 - 검증 명령과 그 결과를 사다리를 근거로 줄이지 않는다.
+   리뷰·조사 태스크에는 적용하지 않는다.
 2. <<태스크 유형에 맞는 줄을 아래 표에서 골라 이 자리에 넣는다>>
 3. 작업 도중 버그, 테스트 실패, 예상 밖 동작을 만나면 수정을 제안하기 전에 근본 원인을
    추적한다. 한 번에 하나씩 고친다 - 여러 변경을 묶어 시도하면 무엇이 효과가 있었는지
@@ -201,15 +215,24 @@ row matching the task, keeping the `2.` number:
 
 Never dispatch a spec that still contains the `<<...>>` placeholder.
 
-The numbering is the worker's time order, so read it top to bottom: settle scope (1), do the
-work under the rule for this task type (2), trace root causes for anything that surprises you
-along the way (3), verify (4), and report (5-6). Item 1 is first because a test written before
-scope is settled tests the wrong thing. Item 1-1 rides with it because where the working
-files go is part of settling the setup, and it is numbered under 1 rather than appended at
+The numbering is the worker's time order, so read it top to bottom: settle scope (1), pick
+the smallest solution that holds (1-2), do the work under the rule for this task type (2),
+trace root causes for anything that surprises you along the way (3), verify (4), and report
+(5-6). Item 1 is first because a test written before scope is settled tests the wrong thing.
+Items 1-1 and 1-2 ride with it — where the working files go and how big the solution may be
+are both part of settling the setup — and they are numbered under 1 rather than appended at
 the end so the later numbers keep the meaning the rest of this distribution refers to. Item 2
 holds the task-type rule because that is when the work itself happens. Item 3 is not a stage
 but a conditional rule that fires whenever a bug surfaces mid-task. Item 4 is the gate
 immediately before `worker_done`.
+
+**Item 1-2 yields to items 2 and 6 where they overlap, and the contract says so on its own
+line.** Upstream ponytail lets trivial code ship without a test and caps explanation at three
+lines; both are wrong for a dispatched worker, which owes the coordinator a failing test
+first and a `worker_done --body` carrying the verification command and its output. Without
+that precedence line a worker reads two rules of equal weight and picks whichever it saw
+last. Item 1-2 also scopes itself out of review and investigation tasks, which have no
+solution to size.
 
 Item 4 binds every task type, not just the ones that run a command. A review or an
 investigation has no test suite to execute, but it still makes claims, and an unreproduced
@@ -337,6 +360,7 @@ Orca 사내 배포판이 번들한 스킬이다. **업스트림 원문에 `Worki
 - 추가 1건: `Bundled quality skills` 절. 번들된 엔지니어링 규율 스킬을 언제 로드하고, 워커에게 디스패치할 때 태스크 spec에 무엇을 주입할지 정한다.
 - 추가 2건: `Working files` 절과 규약 1-1번. 산출물이 아닌 작업 파일을 `.orca/artifacts/` 아래에만 쓰게 한다. 디스패치 여부와 무관하게 적용되므로 최상위 절로 뒀다 — 사용자가 겪은 문제는 디스패치 없이 그냥 자기 프로젝트에서 스킬을 쓸 때 폴더가 제멋대로 생기는 것이었다. 사내 Orca 체크아웃(`enterprise/samsungds`)에 같은 취지의 `Work Artifacts` 절이 `f1c3963d`로 커밋돼 있지만(2026-09-01 확인), 상류 main `c5d43b8a`에는 없고 빌드 전이라 설치된 1.4.192가 서비스하는 가이드에도 없다. 그 빌드가 배포될 때까지는 이 절이 유일하게 실제로 걸리는 경로다. 규약 번호를 1-1로 둔 것은 뒤 번호를 밀지 않기 위해서다 — README와 `docs/how-it-works.md`가 2~6번을 그 번호로 참조한다. 상류가 이 규약을 릴리스하면 이 절을 지우고 가이드를 따른다.
 - 추가 3건: `Coordinator field notes` 절. 업스트림 가이드가 다루지 않아 코디네이터가 실제로 시간을 버린 두 지점을 적었다 — `task-create`의 `--task-title`/`--display-name` 미문서화(없으면 spec 첫 줄에서 제목을 파생한다), `worker-list`의 `legacy_ambiguous` 행이 누수가 아니라는 것. Orca 1.4.191 소스(`src/shared/orchestration-task-display.ts`, `src/main/runtime/orchestration/db/worker-terminal/worker-terminal-release.ts`)와 실제 CLI 실행으로 확인했다(2026-08-29). 업스트림 가이드가 이 둘을 문서화하면 이 절은 지운다.
+- 추가 4건: 규약 1-2번과 라우팅 표의 `ponytail` 행. 해법의 크기를 정하는 사다리를 spec에 싣는다. 상류 ponytail(`DietrichGebert/ponytail` `2ed6c52c9d7e`)은 훅과 opencode 플러그인으로 매 턴 규칙 전문(~1,300 토큰)을 주입하는 경로도 제공하지만, 이 배포판은 쓰지 않는다 - 워커 호스트마다 설정이 필요하고, Claude Code용 `SessionStart` 훅이 statusline 설정을 제안하는 지시를 세션에 주입해 무인 워커의 작업을 흐트러뜨린다. 대신 사다리 본문만 규약에 인라인해 워커 종류와 설치 상태에 무관하게 걸리도록 했다. 상류 본문과 충돌하는 두 지점(테스트 생략 허용, 설명 3줄 상한)은 1-2번 안에서 2번과 6번이 이긴다고 명시했다.
 - 이 절이 유일한 정본이다. `orca skills get orchestration`이 서비스하는 가이드에는 품질 스킬 라우팅도 작업 파일 위치 규약도 없으므로(업스트림 가이드 435줄에 해당 내용 없음), 이 스킬 파일만으로 자립 동작하도록 규약 본문을 그대로 담았다. Orca 소스를 수정할 필요가 없다.
 - frontmatter의 `description`은 업스트림 그대로다. Orca가 이 필드로 스킬을 라우팅하므로 바꾸지 않는다.
 - **주의:** 이 스킬은 업스트림과 이름·경로가 같다. `orca skills update --skill orchestration`을 실행하면 위 커스터마이징이 업스트림 원문으로 덮인다. 갱신은 이 저장소에서 내려받는 방식으로만 한다.

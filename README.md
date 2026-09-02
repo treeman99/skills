@@ -20,6 +20,7 @@ skills/
   orchestration/                  stablyai/orca 원문 + 품질 스킬 라우팅 (커스터마이징)
   orca-cli/                       stablyai/orca 원문
   karpathy-guidelines/            범위 통제, 가정 명시, 검증 가능한 성공 기준
+  ponytail/                       해법의 크기를 정하는 사다리 (YAGNI → 재사용 → 최소 구현)
   test-driven-development/        구현 전 실패 테스트
   systematic-debugging/           수정 제안 전 근본 원인 추적
   verification-before-completion/ 완료 주장 전 증거
@@ -27,7 +28,7 @@ skills/
 
 ## 어디에 넣나
 
-`skills/` **아래의 6개 폴더**를 아래 경로에 통째로 복사한다. `skills/` 폴더 자체가 아니라
+`skills/` **아래의 7개 폴더**를 아래 경로에 통째로 복사한다. `skills/` 폴더 자체가 아니라
 그 안의 내용물이다.
 
 | 경로 (Windows) | 경로 (macOS/Linux/WSL) | 넣는 이유 |
@@ -40,7 +41,7 @@ skills/
 읽고, 프로젝트 쪽의 `.claude/skills`, `.agents/skills`, `.opencode/skills`도 함께 본다.
 세 곳에 같은 스킬 이름을 두면 **어느 사본이 로드될지가 실행마다 갈린다.** opencode의 스킬
 로더는 동시성 제한 없이 파일을 읽고 같은 이름은 나중에 끝난 쪽이 이기기 때문이다. 실제로
-6종을 세 경로에 모두 넣고 `opencode debug skill`을 5회 돌리면 `orchestration`이 잡히는
+스킬을 세 경로에 모두 넣고 `opencode debug skill`을 5회 돌리면 `orchestration`이 잡히는
 사본이 `.agents`와 `.config/opencode` 사이에서 왔다 갔다 한다(opencode 1.18.26에서 확인).
 
 이전 판을 따라 `~/.config/opencode/skills`에 이미 복사했다면 **거기 있는 6개 폴더를
@@ -58,6 +59,7 @@ junction)로 만든다. opencode도 Claude Code도 링크를 따라간다.
   orchestration\SKILL.md
   orca-cli\SKILL.md
   karpathy-guidelines\SKILL.md
+  ponytail\SKILL.md
   systematic-debugging\SKILL.md
   test-driven-development\SKILL.md
   verification-before-completion\SKILL.md
@@ -96,7 +98,7 @@ foreach ($dst in @(
 
 ```bash
 # 1. Orca가 스킬을 인식하는가
-orca skills installed | grep -E 'karpathy|test-driven|systematic-debug|verification-before'
+orca skills installed | grep -E 'karpathy|ponytail|test-driven|systematic-debug|verification-before'
 
 # 2. 설치한 사본 전부에 라우팅이 실렸는가 (사본마다 1 이상이어야 한다)
 grep -c 'QUALITY CONTRACT' ~/.agents/skills/orchestration/SKILL.md \
@@ -195,6 +197,7 @@ task id를 우선하는 이유는 코디네이터와 `worker_done` 페이로드�
 | 스킬 | 걸리는 시점 | 규약 번호 |
 |---|---|---|
 | `karpathy-guidelines` | 모든 코딩 작업, 범위를 정하는 순간부터 | 1 |
+| `ponytail` | 범위가 정해지고 무엇을 만들지 고르는 순간, 코드를 쓰기 전 | 1-2 |
 | `test-driven-development` | 구현 코드를 쓰거나 고치기 전 | 2 |
 | `systematic-debugging` | 버그·테스트 실패·예상 밖 동작이 나타났을 때 | 3 |
 | `verification-before-completion` | 완료 주장, `worker_done`, 커밋, PR 직전 | 4, 6 |
@@ -204,7 +207,7 @@ task id를 우선하는 이유는 코디네이터와 `worker_done` 페이로드�
 
 ### 한 태스크에서 스킬이 걸리는 순서
 
-아래는 이 브랜치가 배포하는 6종 기준이다. 규약 번호는 워커가 밟는 **시간 순서**이고,
+아래는 이 브랜치가 배포하는 7종 기준이다. 규약 번호는 워커가 밟는 **시간 순서**이고,
 3번과 5번은 단계가 아니라 조건이 맞을 때 발동하는 규칙이라 점선으로 그렸다.
 오른쪽 아래 갈래는 디스패치일 때만 성립한다 — 코디네이터가 직접 하는 작업에는
 `worker_done`도 `worker-release`도 없다.
@@ -221,7 +224,8 @@ flowchart TD
     SELF --> K["규약 1 · 범위 확정<br/>karpathy-guidelines"]
     WK --> K
 
-    K --> T["규약 2 · 유형별 규칙<br/>test-driven-development"]
+    K --> L["규약 1-2 · 해법 크기<br/>ponytail"]
+    L --> T["규약 2 · 유형별 규칙<br/>test-driven-development"]
     T --> IMPL["작업 수행"]
     IMPL --> V["규약 4 · 완료 게이트<br/>verification-before-completion"]
 
@@ -254,6 +258,38 @@ flowchart TD
 않는다.** 빌드 설정·의존성 매니페스트·공통 설정처럼 다른 태스크도 건드릴 파일은
 가정하고 진행하는 대신 물어야 한다. 병렬 워커가 각자 "가정 명시 후 진행"으로 판단하면
 같은 파일을 동시에 고쳐 서로의 작업을 덮는다. 이 규칙이 그것을 막는다.
+
+#### `ponytail` — 사다리에서 처음 성립하는 칸에 멈춘다
+
+`karpathy-guidelines`가 **무엇을 할지**의 범위를 정한다면 이 스킬은 **무엇을 만들지**의
+크기를 정한다. 7단 사다리를 위에서부터 내려오며 처음 성립하는 칸에서 멈춘다: 존재해야
+하는가(YAGNI) → 코드베이스에 이미 있는가 → 표준 라이브러리 → 플랫폼 기본 기능 → 이미
+설치된 의존성 → 한 줄 → 최소 구현.
+
+사다리는 **문제를 이해한 뒤에** 오른다. 본문이 "Never lazy about understanding the
+problem"이라고 못 박는 이유가 이것이다 — 이해를 건너뛰고 나온 작은 diff는 효율이 아니라
+자신 있게 틀린 수정이다. 입력 검증, 데이터 유실을 막는 에러 처리, 보안, 접근성은 어느
+칸에서도 깎지 않는다.
+
+번들의 다른 스킬과 겹치는 자리가 셋 있고, **규약 1-2번이 그 우선순위를 명시한다.**
+
+| 겹치는 곳 | 어느 쪽이 이기나 |
+|---|---|
+| 상류 본문의 "사소한 코드엔 테스트 불필요" | **규약 2번(TDD)이 이긴다.** 사다리는 해법의 크기만 정한다 |
+| 상류 본문의 "설명은 최대 3줄" | **규약 6번이 이긴다.** 검증 명령과 출력은 전부 `--body`에 싣는다 |
+| 리뷰·조사 태스크 | 적용하지 않는다. 크기를 정할 해법이 없다 |
+
+명시하지 않으면 워커는 같은 무게의 규칙 둘을 받아 나중에 본 쪽을 따른다. opencode
+워커에서 실제로 그렇게 갈린다.
+
+레벨(`lite`/`full`/`ultra`)은 디스패치에서 **full 고정**이다. `/ponytail` 슬래시 명령도
+"stop ponytail"이라고 말해 줄 사람도 워커 터미널에는 없다.
+
+**상류의 훅과 opencode 플러그인은 쓰지 않는다.** 그 경로는 매 턴 규칙 전문(~1,300 토큰)을
+시스템 프롬프트에 주입하지만, 워커 호스트마다 설정이 필요해 디스패치마다 성립을 보장할 수
+없다. 게다가 Claude Code용 `SessionStart` 훅은 statusline이 설정돼 있지 않으면 세션에
+"statusline을 깔아 주겠다고 사용자에게 먼저 제안하라"는 지시를 주입한다 — 무인 워커에게는
+태스크를 버리라는 말이다. 이 배포판이 규약 인라인만 쓰는 이유가 이것이다.
 
 #### `test-driven-development` — 실패를 먼저 본다
 
@@ -336,7 +372,7 @@ Iron Law는 **주장보다 증거가 먼저**다. Gate Function 5단계를 통�
 
 ### orchestration 자신과 orca-cli 의 자리
 
-`orchestration`은 위 넷을 실행하는 쪽이지 실행되는 쪽이 아니다. 코디네이터가 로드하면
+`orchestration`은 위 다섯을 실행하는 쪽이지 실행되는 쪽이 아니다. 코디네이터가 로드하면
 `Bundled quality skills` 절이 라우팅의 정본이 되고, 코디네이터는 그 절이 지시하는 대로
 규약을 spec에 인라인한 뒤 2번 슬롯을 치환한다. `orca skills get orchestration`이
 서비스하는 가이드에는 이 라우팅이 없으므로, 이 파일 밖에서 찾을 것이 아니다.
@@ -389,6 +425,7 @@ Copilot CLI는 넘는 스킬을 **경고 없이 버린다**. 이 번들은 `~/.c
 | `orchestration` | `stablyai/orca` | `c5d43b8a` | 상류 저장소 라이선스 |
 | `orca-cli` | `stablyai/orca` | `c5d43b8a` | 상류 저장소 라이선스 |
 | `karpathy-guidelines` | `multica-ai/andrej-karpathy-skills` | `2c606141936f` | MIT |
+| `ponytail` | `DietrichGebert/ponytail` | `2ed6c52c9d7e` | MIT (Dietrich Gebert) |
 | `test-driven-development` | `obra/superpowers` | `b36e0829c6d0` | MIT (Jesse Vincent) |
 | `systematic-debugging` | `obra/superpowers` | `b36e0829c6d0` | MIT (Jesse Vincent) |
 | `verification-before-completion` | `obra/superpowers` | `b36e0829c6d0` | MIT (Jesse Vincent) |
