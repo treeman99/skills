@@ -16,7 +16,7 @@ flowchart TD
     T -->|"&lt;&lt; 가 남아있음"| X["디스패치 금지<br/>워커가 빈칸으로 읽는다"]
     T -->|치환 완료| A{"워커가<br/>opencode 인가"}
     A -->|아니다| W["worker-start<br/>claude / codex"]
-    A -->|그렇다| WO["dispatch --return-preamble<br/>+ terminal send"]
+    A -->|그렇다| WO["dispatch --return-preamble<br/>→ 프리앰블을 파일로 쓰고<br/>terminal send 로 경로 한 줄"]
 
     W --> G["워커가 게이트를 순서대로 밟는다"]
     WO --> G
@@ -171,6 +171,8 @@ Orca 가이드는 코디네이터에게 *"`check --wait` 타임아웃을 워커 
 | opencode가 커스터마이징 안 된 orchestration을 로드한다 | 여러 경로에 사본을 두어 어느 쪽이 이길지가 실행마다 갈린다 | `opencode debug skill`의 `location`이 어느 사본인지 |
 | 워커가 응답 없이 멈춰 있다 | 규약 5를 뺐고 워커가 사람을 기다린다 | 워커 터미널에 질문이 떠 있는지 |
 | opencode 워커에 디스패치했는데 아무 일도 안 일어난다 | `--inject`/`worker-start`로 보냈다 — opencode는 정착 게이트가 없어 프리앰블이 composer에 미제출로 남고, Orca는 그것을 "turn start was not observed"로 삼키며 dispatch를 살려둔다 | 워커 터미널 입력창에 프리앰블이 그대로 떠 있는지, dispatch가 active인지 |
+| opencode 워커가 스펙 앞부분만 하고 끝냈다 | 프리앰블을 `terminal send --text`로 통째로 보냈다 — opencode는 bracketed paste 없이 키 입력으로 받아 중간에 제출해 버린다. Orca는 자르지 않는다(200 KB까지 손실 0) | 워커가 받은 텍스트가 프리앰블 전문인지, `.orca/artifacts/<task_id>/dispatch-preamble.md`를 읽었는지 |
+| opencode 워커가 파일을 못 찾는다고 한다 | 프리앰블 경로를 상대경로로 보냈거나, 파일을 쓰기 전에 send 했다 | `--text`의 경로가 절대경로인지, 그 파일이 send 시점에 있었는지 |
 | 커스터마이징이 사라졌다 | `orca skills update`가 업스트림으로 덮었다 | `grep -c 'QUALITY CONTRACT'` |
 | 리뷰 보고서가 추측투성이다 | 규약 4를 명령 실행으로만 읽었다 | 발견 사항에 재현 근거가 있는지 |
 | 같은 태스크가 3번 실패하고 죽었다 | 환경 문제를 `failed`로 보고했다 | 실패 사유가 도구·권한·네트워크인지 |
