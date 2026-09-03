@@ -192,6 +192,32 @@ task id를 우선하는 이유는 코디네이터와 `worker_done` 페이로드�
 의존한다 — 사본이 낡았거나, 설치 뒤 재시작을 안 했거나, `permission.skill`이 막고 있으면
 조용히 빠진다. 경로 1은 그 무엇에도 의존하지 않는 유일한 경로다.
 
+### opencode 워커는 프롬프트를 다르게 받는다
+
+같은 태스크라도 **워커가 opencode면 코디네이터가 프롬프트를 다른 방법으로 전달한다.**
+claude와 codex 워커는 `worker-start` 한 번으로 시작하지만, opencode 워커는 터미널을 먼저
+띄우고 `dispatch --return-preamble`로 받은 프리앰블을 `terminal send`로 밀어 넣는다.
+`orchestration` 스킬이 그렇게 하도록 지시하고 있으니, 로그에서 보이더라도 잘못된 것이
+아니다.
+
+Orca가 프롬프트를 주입할 때 붙이는 **정착 게이트가 claude와 codex 전용**이기 때문이다.
+opencode에는 그 대신 고정 시간 대기가 걸리고, 주입 뒤 워커가 실제로 일을 시작했는지
+지켜보는 30초 관찰도 opencode의 상태를 읽지 못하면 실패한다. 그렇게 되면 프리앰블은
+입력창에 제출되지 않은 채로 남고 dispatch는 실행 중으로 표시되어, 코디네이터가 오지 않을
+완료 보고를 계속 기다린다. **이 교착을 피하려고 전달 방법을 바꾼 것이다.**
+
+그래서 opencode 워커를 쓰면 **눈에 보이는 차이가 둘** 있다.
+
+- **워커 터미널이 자동으로 닫히지 않는다.** `worker-start`를 거치지 않은 dispatch는 감독
+  대상이 아니라서 `worker-release`가 아무것도 닫지 않는다. 코디네이터가 `terminal close`로
+  정리하거나 확인용으로 열어 둔다.
+- **태스크를 집어 들었는지 한 번 더 확인한다.** `terminal send`는 바이트를 썼다는 것만
+  알려주므로, 코디네이터가 `worker-read`로 워커가 실제로 시작했는지 보고 나서 대기 루프에
+  들어간다.
+
+`ask`와 `worker_done`은 그대로 동작하고, QUALITY CONTRACT도 프리앰블에 그대로 실린다.
+품질 게이트는 claude·codex 워커와 똑같이 걸린다.
+
 ### 라우팅
 
 | 스킬 | 걸리는 시점 | 규약 번호 |
@@ -219,10 +245,13 @@ flowchart TD
 
     MODE -->|"직접"| SELF["트리거 시점마다<br/>스킬을 스스로 로드"]
     MODE -->|"디스패치"| SPEC["QUALITY CONTRACT 를 spec 에 인라인<br/>2번 슬롯을 태스크 유형으로 치환"]
-    SPEC --> WK["worker-start<br/>claude / opencode"]
+    SPEC --> AG{"워커가<br/>opencode 인가"}
+    AG -->|"아니다"| WK["worker-start<br/>claude / codex"]
+    AG -->|"그렇다"| WKO["dispatch --return-preamble<br/>+ terminal send"]
 
     SELF --> K["규약 1 · 범위 확정<br/>karpathy-guidelines"]
     WK --> K
+    WKO --> K
 
     K --> L["규약 1-2 · 해법 크기<br/>ponytail · 코드 작업만"]
     L --> T["규약 2 · 유형별 규칙<br/>test-driven-development"]
@@ -231,7 +260,7 @@ flowchart TD
 
     V --> DONE["규약 6 · worker_done<br/>검증 명령과 결과를 본문에"]
     DONE --> CONF["코디네이터가 독립 확인<br/>diff 또는 검증 명령"]
-    CONF --> REL["worker-release<br/>확인한 뒤에만"]
+    CONF --> REL["worker-release<br/>확인한 뒤에만<br/>opencode 는 terminal close"]
     V -.->|"직접 수행이었다면"| SREP["사용자에게 바로 보고<br/>5·6번은 보낼 대상이 없다"]
 
     IMPL -.->|"버그·예상 밖 동작"| S["규약 3 · 근본 원인 추적<br/>systematic-debugging"]

@@ -14,12 +14,15 @@ flowchart TD
 
     S2 --> T{"태스크 유형에 맞춰<br/>2번 슬롯을 채웠는가"}
     T -->|"&lt;&lt; 가 남아있음"| X["디스패치 금지<br/>워커가 빈칸으로 읽는다"]
-    T -->|치환 완료| W["worker-start<br/>claude / opencode"]
+    T -->|치환 완료| A{"워커가<br/>opencode 인가"}
+    A -->|아니다| W["worker-start<br/>claude / codex"]
+    A -->|그렇다| WO["dispatch --return-preamble<br/>+ terminal send"]
 
     W --> G["워커가 게이트를 순서대로 밟는다"]
+    WO --> G
     G --> R["worker_done<br/>+ 검증 명령과 결과"]
     R --> V["코디네이터가 독립 확인<br/>diff 또는 검증 명령"]
-    V --> RL["worker-release<br/>확인 후에만"]
+    V --> RL["worker-release<br/>확인 후에만<br/>opencode 는 terminal close"]
     RL --> U2["사용자에게 보고"]
 
     style X fill:#7f1d1d,color:#fff
@@ -167,6 +170,7 @@ Orca 가이드는 코디네이터에게 *"`check --wait` 타임아웃을 워커 
 | opencode가 스킬을 아예 못 본다 | 복사 뒤 재시작을 안 했다 (스킬은 시작 시 한 번만 읽는다) | `opencode debug skill`에 이름이 뜨는지 |
 | opencode가 커스터마이징 안 된 orchestration을 로드한다 | 여러 경로에 사본을 두어 어느 쪽이 이길지가 실행마다 갈린다 | `opencode debug skill`의 `location`이 어느 사본인지 |
 | 워커가 응답 없이 멈춰 있다 | 규약 5를 뺐고 워커가 사람을 기다린다 | 워커 터미널에 질문이 떠 있는지 |
+| opencode 워커에 디스패치했는데 아무 일도 안 일어난다 | `--inject`/`worker-start`로 보냈다 — opencode는 정착 게이트가 없어 프리앰블이 composer에 미제출로 남고, Orca는 그것을 "turn start was not observed"로 삼키며 dispatch를 살려둔다 | 워커 터미널 입력창에 프리앰블이 그대로 떠 있는지, dispatch가 active인지 |
 | 커스터마이징이 사라졌다 | `orca skills update`가 업스트림으로 덮었다 | `grep -c 'QUALITY CONTRACT'` |
 | 리뷰 보고서가 추측투성이다 | 규약 4를 명령 실행으로만 읽었다 | 발견 사항에 재현 근거가 있는지 |
 | 같은 태스크가 3번 실패하고 죽었다 | 환경 문제를 `failed`로 보고했다 | 실패 사유가 도구·권한·네트워크인지 |
