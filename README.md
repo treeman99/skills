@@ -466,10 +466,10 @@ Copilot CLI는 넘는 스킬을 **경고 없이 버린다**. 이 번들은 `~/.c
 
 | 스킬 | 상류 | 커밋 | 라이선스 |
 |---|---|---|---|
-| `orchestration` | `stablyai/orca` | `c5d43b8a` | 상류 저장소 라이선스 |
-| `orca-cli` | `stablyai/orca` | `c5d43b8a` | 상류 저장소 라이선스 |
+| `orchestration` | `stablyai/orca` | `bba68b1b` | 상류 저장소 라이선스 |
+| `orca-cli` | `stablyai/orca` | `bba68b1b` | 상류 저장소 라이선스 |
 | `karpathy-guidelines` | `multica-ai/andrej-karpathy-skills` | `2c606141936f` | MIT |
-| `ponytail` | `DietrichGebert/ponytail` | `2ed6c52c9d7e` | MIT (Dietrich Gebert) |
+| `ponytail` | `DietrichGebert/ponytail` | `356918eba965` | MIT (Dietrich Gebert) |
 | `test-driven-development` | `obra/superpowers` | `b36e0829c6d0` | MIT (Jesse Vincent) |
 | `systematic-debugging` | `obra/superpowers` | `b36e0829c6d0` | MIT (Jesse Vincent) |
 | `verification-before-completion` | `obra/superpowers` | `b36e0829c6d0` | MIT (Jesse Vincent) |

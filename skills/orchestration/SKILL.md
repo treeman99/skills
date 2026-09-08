@@ -1,20 +1,18 @@
 ---
 name: orchestration
 description: >-
-  Use Orca orchestration for structured multi-agent coordination: threaded
-  messages, blocking ask/reply flows, task dispatch, worker_done/escalation
-  waits, task DAGs, decision gates, coordinator loops, or decomposing work
-  across agents. Use `orca-cli` instead for full ownership handoffs, including
-  requests phrased as "hand off", "handoff", "handover", "give this to another
-  agent", or "another worktree" when the user did not explicitly ask to
-  supervise, monitor, wait for results, or coordinate a DAG. Use `orca-cli` for
-  terminal control, lightweight terminal prompts, shell commands, Orca
-  worktree management, reading or waiting on terminals, and automation of the
-  browser embedded inside Orca. Use Computer Use for external browser windows,
-  webviews, Orca app UI, or desktop UI outside Orca's embedded browser only when
-  the task requires OS/window-level control such as focus, menus, dialogs,
-  coordinates, or screenshots. Use `orca-cli` for Orca's embedded pages and a
-  page-automation tool such as Playwright or CDP for external pages.
+  Coordinate supervised Orca workers: threaded messages, blocking ask/reply,
+  task dispatch, worker_done/escalation waits, task DAGs, decision gates,
+  coordinator loops, and decomposing work across agents. Use `orca-cli` for full
+  ownership handoffs — "hand off", "handoff", "handover", "give this to another
+  agent", "another worktree" — unless asked to supervise, monitor, or coordinate
+  a DAG, and for terminal control, lightweight terminal prompts, shell commands,
+  Orca worktree management, and reading or waiting on terminals. Use Computer
+  Use for external browser windows, webviews, Orca app UI, or desktop UI outside
+  Orca's embedded browser only when the task requires OS/window-level control
+  such as focus, menus, dialogs, coordinates, or screenshots. Use `orca-cli` for
+  Orca's embedded pages and a page-automation tool such as Playwright or CDP for
+  external pages.
 ---
 
 # Orca Orchestration
@@ -51,21 +49,24 @@ same way in POSIX shells, PowerShell, and cmd.exe.
 If the selected executable cannot run, report its exact error and stop. Do not fall through
 to another executable, which could silently target a different Orca build.
 
-## Load the full guide before running Orca commands
+## Load the version-matched guide before running Orca commands
 
 ```text
 ORCA skills get orchestration
 ```
 
-That prints the complete, version-matched guide for the exact binary that will handle your
-next commands — task creation and dispatch, injected lifecycle preambles, worker_done
-authority, decision gates, and coordinator loops. Read it first, then run the specific
-command you need.
+That prints the compact, version-matched guide for the exact binary that will handle your
+next commands. It covers the normal local coordinator loop. For a conditional action gate
+such as remote placement, uncertain release recovery, or expanded DAG work, load only the
+reference that gate names with
+`ORCA skills get orchestration --reference references/<file>.md`
+(`--references` lists the names). If that binary rejects `--reference`, run
+`ORCA skills get orchestration --full` and read the named bundled reference before acting.
 
-Don't guess subcommands or flags from memory or from a cached copy of this stub. They
-change between Orca releases, and this file deliberately no longer lists them. Confirm the
-app is up with `ORCA status --json` (start it with `ORCA open --json` if needed), and
-prefer `--json` for agent-driven calls.
+Prefer `--json`. Use the selected executable's `--help` for commands or flags the guide does
+not cover. If a command reports that Orca is not running, start it with `ORCA open --json`
+and retry. If `skills get` is unknown, explain that updating Orca restores the guide; use
+`--help` for read-only discovery and do not guess unsupported commands.
 
 ## Working files
 
@@ -453,36 +454,20 @@ deliberate, because Orca will not close a terminal it cannot prove it owns. Do n
 `terminal close` to tidy them up: the real owner is unknown and may be a terminal the user is
 working in. Scope sweeps to the Run you are coordinating instead of reading the whole table.
 
-## If an older Orca does not recognize `skills get`
-
-Use this fallback only when the selected binary explicitly reports that `skills get` is an
-unknown command. Another failure is not proof of an older binary; report it rather than
-guessing or changing executables. For a confirmed pre-guide binary, use only this bounded,
-read-only bootstrap to orient. Do not dead-end and do not invent commands:
-
-```text
-ORCA status --json
-ORCA orchestration task-list --json
-ORCA terminal list --json
-```
-
-Then tell the user that updating Orca restores the full, version-matched guide via
-`ORCA skills get orchestration`. Beyond these commands, ask the user rather than guessing a
-command surface this older binary may not support.
-
 ---
 
 ## 출처와 커스터마이징 기록
 
 Orca 사내 배포판이 번들한 스킬이다. **업스트림 원문에 `Working files` 절, `Bundled quality skills` 절, `Hand opencode workers their prompt as a file, never as terminal text` 절, `Coordinator field notes` 절, 그리고 이 절만 추가했고, 나머지 본문과 frontmatter는 손대지 않았다.**
 
-- 출처: `stablyai/orca` · `skills/orchestration/SKILL.md` (커밋 `c5d43b8a`)
+- 출처: `stablyai/orca` · `skills/orchestration/SKILL.md` (커밋 `bba68b1b`, 2026-09-08)
+- 상류 갱신(2026-09-08): `bba68b1b`가 stub 8종을 전부 줄였다. 이 스킬에서는 description이 압축되고, `Load the full guide` 절이 `Load the version-matched guide`로 바뀌면서 구버전 바이너리용 부트스트랩 절(`If an older Orca does not recognize skills get`)이 그 절 끝 한 문단으로 흡수됐다. 참조 문서 분할 로딩(`skills get orchestration --reference references/<file>.md`, `--references`)도 새로 들어갔는데, **설치된 1.4.198은 아직 이 플래그를 모른다** — `orca skills get orchestration --references`가 `Unknown flag --references ... Valid flags: --environment, --full, --help, --json, --pairing-code, --topic`으로 거절한다(2026-09-08 확인). stub이 그 경우 `--full`로 폴백하라고 적어 두었고, 1.4.198에서는 `--full`과 기본 출력이 449줄로 동일하다. 커스터마이징은 이 변경과 겹치지 않는다.
 - 추가 1건: `Bundled quality skills` 절. 번들된 엔지니어링 규율 스킬을 언제 로드하고, 워커에게 디스패치할 때 태스크 spec에 무엇을 주입할지 정한다.
-- 추가 2건: `Working files` 절과 규약 1-1번. 산출물이 아닌 작업 파일을 `.orca/artifacts/` 아래에만 쓰게 한다. 디스패치 여부와 무관하게 적용되므로 최상위 절로 뒀다 — 사용자가 겪은 문제는 디스패치 없이 그냥 자기 프로젝트에서 스킬을 쓸 때 폴더가 제멋대로 생기는 것이었다. 사내 Orca 체크아웃(`enterprise/samsungds`)에 같은 취지의 `Work Artifacts` 절이 `f1c3963d`로 커밋돼 있지만(2026-09-01 확인), 상류 main `c5d43b8a`에는 없고 빌드 전이라 설치된 1.4.192가 서비스하는 가이드에도 없다. 그 빌드가 배포될 때까지는 이 절이 유일하게 실제로 걸리는 경로다. 규약 번호를 1-1로 둔 것은 뒤 번호를 밀지 않기 위해서다 — README와 `docs/how-it-works.md`가 2~6번을 그 번호로 참조한다. 상류가 이 규약을 릴리스하면 이 절을 지우고 가이드를 따른다.
-- 추가 3건: `Coordinator field notes` 절. 업스트림 가이드가 다루지 않아 코디네이터가 실제로 시간을 버린 두 지점을 적었다 — `task-create`의 `--task-title`/`--display-name` 미문서화(없으면 spec 첫 줄에서 제목을 파생한다), `worker-list`의 `legacy_ambiguous` 행이 누수가 아니라는 것. Orca 1.4.191 소스(`src/shared/orchestration-task-display.ts`, `src/main/runtime/orchestration/db/worker-terminal/worker-terminal-release.ts`)와 실제 CLI 실행으로 확인했다(2026-08-29). 업스트림 가이드가 이 둘을 문서화하면 이 절은 지운다.
-- 추가 4건: 규약 1-2번과 라우팅 표의 `ponytail` 행. 해법의 크기를 정하는 사다리를 spec에 싣는다. 상류 ponytail(`DietrichGebert/ponytail` `2ed6c52c9d7e`)은 훅과 opencode 플러그인으로 매 턴 규칙 전문(~1,300 토큰)을 주입하는 경로도 제공하지만, 이 배포판은 쓰지 않는다 - 워커 호스트마다 설정이 필요하고, Claude Code용 `SessionStart` 훅이 statusline 설정을 제안하는 지시를 세션에 주입해 무인 워커의 작업을 흐트러뜨린다. 대신 사다리 본문만 규약에 인라인해 워커 종류와 설치 상태에 무관하게 걸리도록 했다. 상류 본문과 충돌하는 두 지점(테스트 생략 허용, 설명 3줄 상한)은 1-2번 안에서 2번과 6번이 이긴다고 명시했다.
-- 추가 5건: `Hand opencode workers their prompt as a file, never as terminal text` 절. opencode 워커에는 `--inject`(따라서 `worker-start`)를 쓰지 않고 `dispatch --return-preamble` + `terminal send`로 프롬프트를 전달한다. **이 절은 상류 가이드와 정면으로 어긋나므로** — 가이드는 모든 에이전트에 `worker-start`를 preferred로 두고 `terminal send`는 bare shell과 full handoff 전용으로 둔다 — 근거를 남긴다. Orca 1.4.195 소스에서 확인한 두 지점이다(2026-09-03). ① `out/main/index.js`의 `createAgentPromptRenderGate`는 `xpi(agent) → agent === 'claude' || agent === 'codex'`일 때만 붙고, 나머지는 `out/shared/agent-prompt-injection.js`의 `getAgentPromptSubmitDelayMs` = `500ms + ceil(bytes/4096)`(win32는 `bytes/64`) 개루프 타이머로 Enter를 친다. ② Enter 뒤 `hmn()`이 최대 30초(`AP = 3e4`) 동안 워커의 `working` 전환을 폴링하고, 못 보면 `agent_prompt_stalled`을 던진다. 코디네이터 루프는 그것을 `pmn()`으로 잡아 "turn start was not observed. The preamble is already in the pane"로 삼키고 dispatch를 active로 남긴다 — 프리앰블은 composer에 미제출로 남고 코디네이터는 오지 않을 `worker_done`을 `check --wait`로 기다린다. 5번 줄이 빠졌을 때와 같은 상호 대기다. 대가는 절 안에 넷으로 적었다(capability 미발급, 전달 리시트 없음, 프리앰블이 디스크에 남음, 워커 감독 행 없음). 상류가 opencode에 출력 기반 정착 게이트와 관측 가능한 상태를 주면 이 절을 지운다.
-- 추가 5-1건(2026-09-03): 같은 절에서 **프리앰블을 `terminal send --text`로 보내지 않고 `.orca/artifacts/<task_id>/dispatch-preamble.md`에 쓴 뒤 그 경로 한 줄만 보내도록** 바꿨다. 계기는 긴 프롬프트가 워커에 다 전달되지 않는다는 사용자 보고였다. **원인은 Orca가 아니다.** 1.4.195에 프로브 터미널(raw 모드 리더)을 붙여 실측한 결과 `terminal send --text`는 2 KB·8 KB·16 KB·16,384 B·20 KB·40 KB·100 KB·200 KB에서 손실이 0이었고, 64바이트를 10 ms마다 읽는 의도적으로 느린 리더에서도 32 KB까지 손실이 0이었다. 소스도 같다 — `out/shared/terminal-input.js`의 `TERMINAL_INPUT_CHUNK_MAX_BYTES`(16 KiB)로 쪼개 쓰지만 유일한 상한 `TERMINAL_INPUT_MAX_BYTES`(16 MiB)는 자르는 게 아니라 `Terminal input is too large for a safe terminal send.`로 거부한다. 잘리는 곳은 opencode의 composer다: `out/main/index.js`의 `terminal.send` 핸들러는 `isTerminalRunningSettledPromptAgent`(→ `xpi(agent)`, `claude`·`codex`만 참)일 때만 bracketed paste 경로(`sendTerminalAgentPrompt`)를 타고, opencode는 원시 경로(`sendTerminal` → `writeTerminalInputChunks`)로 가 개행이 전부 키 이벤트가 된다. 16 KiB 청크 사이 간격은 `setImmediate` 한 번뿐이라 프리앰블이 길수록 그 이음매를 더 많이 지나지만, **어느 이음매에서 composer의 붙여넣기 추론이 깨지는지는 opencode 빌드·pane 크기·머신 부하에 달려 있어 Orca가 이름 붙일 수 있는 바이트 임계값이 없다.** 그래서 크기 분기를 두지 않고 opencode는 무조건 파일 경유로 고정했다 — 임계값을 잘못 잡으면 워커가 절반짜리 스펙으로 시작하고, 그건 아예 시작하지 않는 것보다 나쁘다. 상류가 opencode에도 bracketed paste를 태우면 이 변경을 되돌린다.
-- 이 절이 유일한 정본이다. `orca skills get orchestration`이 서비스하는 가이드에는 품질 스킬 라우팅도 작업 파일 위치 규약도 없으므로(업스트림 가이드 435줄에 해당 내용 없음), 이 스킬 파일만으로 자립 동작하도록 규약 본문을 그대로 담았다. Orca 소스를 수정할 필요가 없다.
+- 추가 2건: `Working files` 절과 규약 1-1번. 산출물이 아닌 작업 파일을 `.orca/artifacts/` 아래에만 쓰게 한다. 디스패치 여부와 무관하게 적용되므로 최상위 절로 뒀다 — 사용자가 겪은 문제는 디스패치 없이 그냥 자기 프로젝트에서 스킬을 쓸 때 폴더가 제멋대로 생기는 것이었다. 사내 Orca 체크아웃(`enterprise/samsungds`)에 같은 취지의 `Work Artifacts` 절이 `f1c3963d`로 커밋돼 있지만(2026-09-01 확인), 상류 main `bba68b1b`에도 없고, 1.4.198이 서비스하는 449줄 가이드에도 없다(2026-09-08 재확인 — `artifact`·`working file`·`report-path` 검색 결과가 워커 배치 문단과 `worker_done` 예시뿐이다). 그 빌드가 배포될 때까지는 이 절이 유일하게 실제로 걸리는 경로다. 규약 번호를 1-1로 둔 것은 뒤 번호를 밀지 않기 위해서다 — README와 `docs/how-it-works.md`가 2~6번을 그 번호로 참조한다. 상류가 이 규약을 릴리스하면 이 절을 지우고 가이드를 따른다.
+- 추가 3건: `Coordinator field notes` 절. 업스트림 가이드가 다루지 않아 코디네이터가 실제로 시간을 버린 두 지점을 적었다 — `task-create`의 `--task-title`/`--display-name` 미문서화(없으면 spec 첫 줄에서 제목을 파생한다), `worker-list`의 `legacy_ambiguous` 행이 누수가 아니라는 것. Orca 1.4.191 소스(`src/shared/orchestration-task-display.ts`, `src/main/runtime/orchestration/db/worker-terminal/worker-terminal-release.ts`)와 실제 CLI 실행으로 확인했다(2026-08-29). 1.4.198이 서비스하는 449줄 가이드에도 `task-title`·`display-name`·`legacy_ambiguous`가 한 번도 나오지 않는다(2026-09-08 재확인). 업스트림 가이드가 이 둘을 문서화하면 이 절은 지운다.
+- 추가 4건: 규약 1-2번과 라우팅 표의 `ponytail` 행. 해법의 크기를 정하는 사다리를 spec에 싣는다. 상류 ponytail(`DietrichGebert/ponytail` `356918eba965`)은 훅과 opencode 플러그인으로 매 턴 규칙 전문(~1,300 토큰)을 주입하는 경로도 제공하지만, 이 배포판은 쓰지 않는다 - 워커 호스트마다 설정이 필요하고, Claude Code용 `SessionStart` 훅이 statusline 설정을 제안하는 지시를 세션에 주입해 무인 워커의 작업을 흐트러뜨린다. 대신 사다리 본문만 규약에 인라인해 워커 종류와 설치 상태에 무관하게 걸리도록 했다. 상류 본문과 충돌하는 두 지점(테스트 생략 허용, 설명 3줄 상한)은 1-2번 안에서 2번과 6번이 이긴다고 명시했다.
+- 추가 5건: `Hand opencode workers their prompt as a file, never as terminal text` 절. opencode 워커에는 `--inject`(따라서 `worker-start`)를 쓰지 않고 `dispatch --return-preamble` + `terminal send`로 프롬프트를 전달한다. **이 절은 상류 가이드와 정면으로 어긋나므로** — 가이드는 모든 에이전트에 `worker-start`를 preferred로 두고 `terminal send`는 bare shell과 full handoff 전용으로 둔다 — 근거를 남긴다. Orca 1.4.195 소스에서 확인한 두 지점이다(2026-09-03). ① `out/main/index.js`의 `createAgentPromptRenderGate`는 `xpi(agent) → agent === 'claude' || agent === 'codex'`일 때만 붙고, 나머지는 `out/shared/agent-prompt-injection.js`의 `getAgentPromptSubmitDelayMs` = `500ms + ceil(bytes/4096)`(win32는 `bytes/64`) 개루프 타이머로 Enter를 친다. ② Enter 뒤 `hmn()`이 최대 30초(`AP = 3e4`) 동안 워커의 `working` 전환을 폴링하고, 못 보면 `agent_prompt_stalled`을 던진다. 코디네이터 루프는 그것을 `pmn()`으로 잡아 "turn start was not observed. The preamble is already in the pane"로 삼키고 dispatch를 active로 남긴다 — 프리앰블은 composer에 미제출로 남고 코디네이터는 오지 않을 `worker_done`을 `check --wait`로 기다린다. 5번 줄이 빠졌을 때와 같은 상호 대기다. 대가는 절 안에 넷으로 적었다(capability 미발급, 전달 리시트 없음, 프리앰블이 디스크에 남음, 워커 감독 행 없음). 상류가 opencode에 출력 기반 정착 게이트와 관측 가능한 상태를 주면 이 절을 지운다. **1.4.198에서 재확인했다(2026-09-08):** `createAgentPromptRenderGate`의 게이트는 여전히 `['claude','codex'].includes(launchAgent ?? foregroundAgent ?? '')`이고, `getAgentPromptSubmitDelayMs`도 `500ms + ceil(bytes/4096)`(win32는 `bytes/64`) 그대로다. dispatch 경로가 `agent_prompt_stalled`을 "turn start was not observed. The preamble is already in the pane, so the dispatch stays active instead of being resent."로 삼키는 것도 그대로다.
+- 추가 5-1건(2026-09-03): 같은 절에서 **프리앰블을 `terminal send --text`로 보내지 않고 `.orca/artifacts/<task_id>/dispatch-preamble.md`에 쓴 뒤 그 경로 한 줄만 보내도록** 바꿨다. 계기는 긴 프롬프트가 워커에 다 전달되지 않는다는 사용자 보고였다. **원인은 Orca가 아니다.** 1.4.195에 프로브 터미널(raw 모드 리더)을 붙여 실측한 결과 `terminal send --text`는 2 KB·8 KB·16 KB·16,384 B·20 KB·40 KB·100 KB·200 KB에서 손실이 0이었고, 64바이트를 10 ms마다 읽는 의도적으로 느린 리더에서도 32 KB까지 손실이 0이었다. 소스도 같다 — `out/shared/terminal-input.js`의 `TERMINAL_INPUT_CHUNK_MAX_BYTES`(16 KiB)로 쪼개 쓰지만 유일한 상한 `TERMINAL_INPUT_MAX_BYTES`(16 MiB)는 자르는 게 아니라 `Terminal input is too large for a safe terminal send.`로 거부한다. 잘리는 곳은 opencode의 composer다: `out/main/index.js`의 `terminal.send` 핸들러는 `isTerminalRunningSettledPromptAgent`일 때만 bracketed paste 경로(`sendTerminalAgentPrompt`)를 타고, opencode는 원시 경로(`sendTerminal` → `writeTerminalInputChunks`)로 가 개행이 전부 키 이벤트가 된다. 1.4.198에서도 그 술어는 `s !== 'claude' && s !== 'codex'`이면 `false`를 돌려주는 그대로다(2026-09-08 재확인). 16 KiB 청크 사이 간격은 `setImmediate` 한 번뿐이라 프리앰블이 길수록 그 이음매를 더 많이 지나지만, **어느 이음매에서 composer의 붙여넣기 추론이 깨지는지는 opencode 빌드·pane 크기·머신 부하에 달려 있어 Orca가 이름 붙일 수 있는 바이트 임계값이 없다.** 그래서 크기 분기를 두지 않고 opencode는 무조건 파일 경유로 고정했다 — 임계값을 잘못 잡으면 워커가 절반짜리 스펙으로 시작하고, 그건 아예 시작하지 않는 것보다 나쁘다. 상류가 opencode에도 bracketed paste를 태우면 이 변경을 되돌린다.
+- 이 절이 유일한 정본이다. `orca skills get orchestration`이 서비스하는 가이드에는 품질 스킬 라우팅도 작업 파일 위치 규약도 없으므로(1.4.198이 서비스하는 449줄 가이드에 해당 내용 없음, 2026-09-08 확인), 이 스킬 파일만으로 자립 동작하도록 규약 본문을 그대로 담았다. Orca 소스를 수정할 필요가 없다.
 - frontmatter의 `description`은 업스트림 그대로다. Orca가 이 필드로 스킬을 라우팅하므로 바꾸지 않는다.
 - **주의:** 이 스킬은 업스트림과 이름·경로가 같다. `orca skills update --skill orchestration`을 실행하면 위 커스터마이징이 업스트림 원문으로 덮인다. 갱신은 이 저장소에서 내려받는 방식으로만 한다.
