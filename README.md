@@ -14,18 +14,23 @@
 
 ## 무엇이 들어 있나
 
-### Orca 번들 스킬 — `stablyai/orca` `bba68b1b` (2026-09-08)
+### Orca 번들 스킬 — `stablyai/orca` `aac38d69` (2026-09-09)
 
 Orca가 `orca skills install`로 설치하는 스킬 전부다. 8종이고, 이름은 설치된 Orca의
 `orca skills list --json`이 내놓는 목록과 맞춰 확인한다.
 
-**본문은 설치된 앱보다 상류 쪽이 앞서 있을 수 있다.** `bba68b1b`에서 상류는 8종 stub을
-전부 줄였다 — description을 압축하고, "이건 stub이다"라는 설명·`skills get` 안내·구버전
-바이너리용 부트스트랩 블록을 한 문단으로 합쳤다. `orchestration`에는 참조 문서 분할
-로딩(`skills get orchestration --reference references/<file>.md`, `--references`,
-`--full`)이 새로 들어갔다. 이 플래그를 모르는 구버전 바이너리를 만나면 stub 자신이
-`--full`로 폴백하라고 적어 두었으므로, 앱이 상류보다 뒤처져 있어도 복구용으로 쓰는 데는
-지장이 없다.
+커밋은 `bba68b1b`에서 `aac38d69`로 올렸지만 **`skills/` 아래는 하나도 바뀌지 않았다.**
+그 사이 상류가 건드린 것은 배포 경로(`fix(push): isolate deployment and validate
+candidates before activation`)뿐이고, stub 8종은 바이트 단위로 같다. 커밋만 올린 것은
+어느 시점까지 대조했는지를 남기기 위해서다.
+
+**본문은 설치된 앱보다 상류 쪽이 앞서 있을 수 있다.** stub의 마지막 내용 변경은
+`bba68b1b`였다 — 8종의 description을 압축하고, "이건 stub이다"라는 설명·`skills get`
+안내·구버전 바이너리용 부트스트랩 블록을 한 문단으로 합쳤다. `orchestration`에는 참조
+문서 분할 로딩(`skills get orchestration --reference references/<file>.md`,
+`--references`, `--full`)이 새로 들어갔다. 이 플래그를 모르는 구버전 바이너리를 만나면
+stub 자신이 `--full`로 폴백하라고 적어 두었으므로, 앱이 상류보다 뒤처져 있어도 복구용으로
+쓰는 데는 지장이 없다.
 
 | 스킬 | `orca_skill`이 쓰나 |
 |---|---|
@@ -55,6 +60,9 @@ ponytail의 커밋은 `2ed6c52c9d7e`에서 `356918eba965`로 올렸지만 **파�
 않았다.** 그 사이 상류가 건드린 것은 README 로고 파일 이름뿐이고, `skills/` 6종과
 `LICENSE`는 바이트 단위로 같다. 커밋만 올린 것은 어느 시점까지 대조했는지를 남기기
 위해서다.
+
+이 표의 세 상류는 **2026-09-10 재확인 시점에도 커밋이 그대로다.** 세 저장소 HEAD가 위에
+적힌 커밋이고, 그래서 이번 갱신에서는 Orca 번들 쪽 커밋만 올렸다.
 
 `orca_skill`은 이 4종에 `Orca dispatch 컨텍스트` 절과 출처절을 덧붙여 쓴다. 무엇이
 덧붙었는지는 이 브랜치와 diff를 뜨면 그대로 나온다.
