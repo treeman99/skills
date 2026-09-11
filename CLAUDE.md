@@ -33,8 +33,13 @@
 - `orca skills get <name>` — 설치된 바이너리가 서비스하는 전체 가이드(400줄 이상).
   `skills/<name>/SKILL.md`(발견용 stub)와 **다른 문서다.** 이걸로 stub을 덮지 말 것.
   상류 원문이 필요하면 `stablyai/orca`의 `skills/`에서 받는다
-- `npx asar extract /Applications/Orca.app/Contents/Resources/app.asar <dir>` — Orca 동작을
-  소스에서 확인할 때. `out/shared/`는 미압축, `out/main/index.js`는 압축돼 있다
+- Orca 동작을 소스에서 확인할 때는 **사내 포크**를 본다 — 포크 소스
+  `/Users/daegun/Workspace/orca`의 `enterprise/samsungds` 브랜치, 또는 Windows 설치본의
+  `resources/app.asar`를 `npx asar extract <asar> <dir>`로 푼 것(`out/shared/`는 미압축,
+  `out/main/index.js`는 압축돼 있다). **`/Applications/Orca.app`은 쓰지 않는다** — 그 앱은
+  1.4.199에서도 업스트림 빌드라 포크가 고친 내용(`promptDeliveryMode`, `worker-pane-main`,
+  `waitForAgentComposerReady` 등)이 전부 "없다"로 나온다. 이 착오로 opencode 워커 우회
+  규칙을 한 번 잘못 세운 적이 있다(orchestration 출처절 5·5-2번)
 
 ## 규약
 

@@ -89,6 +89,7 @@ folder invented for the purpose.
 |---|---|
 | Dispatched worker with a `taskId` | `.orca/artifacts/<task_id>/` |
 | No `taskId` — working directly, or a full handoff | `.orca/artifacts/<short-slug>/` |
+| Coordinator writing an opencode worker's spec file, before `task-create` has run | `.orca/artifacts/<short-slug>/dispatch-spec.md` |
 
 The task id is preferred because it is the one identifier the coordinator, the `worker_done`
 payload, and `dispatch-show` already share, so a stray file always traces back to the task
@@ -149,7 +150,9 @@ not restarted after install, or a permission rule silently removes it. Naming a 
 spec and expecting it to load drops the gate with no signal that it happened.
 
 **Inline the contract into the spec.** Append this verbatim after the task body in
-`task-create --spec`, keeping the wording — workers key off this shape:
+`task-create --spec`, keeping the wording — workers key off this shape. For an opencode
+worker the task body and this block go into the spec file instead, and `--spec` carries only
+the pointer to it — see the opencode section below; the block itself does not change:
 
 ```text
 --- QUALITY CONTRACT (Orca dispatch 전용) ---
@@ -295,127 +298,116 @@ when the outcome says `succeeded`.
 
 `worktree create --prompt` and a free-form `terminal send` deliver no lifecycle preamble, so
 a worker there has no `ask` or `worker_done` target. Handing off ownership hands off the
-quality contract with it. The opencode path below also uses `terminal send`, but what it
-sends points at a real dispatch preamble on purpose — that is a dispatch, not a handoff.
+quality contract with it. The opencode path below is still `worker-start`; only the spec
+moves into a file, so it is a dispatch like any other.
 
-## Hand opencode workers their prompt as a file, never as terminal text
+## opencode workers go through `worker-start`, with the spec as a file pointer
 
-**An opencode worker never receives its task through `--inject`.** That rules out the
-composed `worker-start` as well, because `worker-start` injects. **It also never receives the
-preamble as `terminal send` text.** Write the preamble to a file and send one line that
-points at it. Build the worker in five steps, in this order:
+An opencode worker starts the same way as a `claude` or `codex` worker: through the composed
+`worker-start`. That is the only path that gives the worker a supervised row, a dispatch
+capability, a delivery receipt, the auto-close on settlement, and the pane placement that
+splits the worker next to the coordinator instead of adding a tab. **Do not build an opencode
+worker out of `terminal create` or `worktree create --agent opencode` plus `terminal send`.**
+A terminal created that way is an ordinary terminal — no anchor, no supervision — and the
+renderer just appends a tab to the active group.
+
+What differs for opencode is the shape of the spec. **The task body and the QUALITY CONTRACT
+do not go into `--spec`.** Write them to a file in the worker's worktree first, and give
+`--spec` only a pointer to that file. Four steps, in this order:
 
 ```text
-ORCA worktree create --name <name> --repo <selector> --agent opencode --json
-ORCA terminal wait --terminal <handle> --for tui-idle --timeout-ms 120000 --json
-ORCA orchestration dispatch --task <task_id> --to <handle> --return-preamble --json
-<write the preamble verbatim to <worktree>/.orca/artifacts/<task_id>/dispatch-preamble.md>
-ORCA terminal send --terminal <handle> --text "Read <abs path to that file> in full and follow it exactly. It is your dispatch preamble." --enter --json
+<write the task body + QUALITY CONTRACT verbatim to <worktree>/.orca/artifacts/<short-slug>/dispatch-spec.md>
+ORCA orchestration task-create --task-title "<short title>" --spec "Read <abs path to that file> in full and follow it exactly. It is your task spec, QUALITY CONTRACT included." --json
+ORCA orchestration worker-start --task <task_id> --worktree current --agent opencode --json
+ORCA orchestration worker-read --dispatch <dispatch_id> --limit 50 --json
 ```
 
-For a worker in a checkout that already exists, replace the first line with
-`ORCA terminal create --worktree <selector> --command "opencode" --json`. Either way, take
-`<handle>` from the create response — `agentTerminalHandle`, falling back to
-`startupTerminal.handle` on older runtimes.
+`worker-start --spec "<that same pointer>" --task-title "<short title>" --worktree current
+--agent opencode --json` folds the middle two commands into one when the task needs no
+`--deps`. `--worktree` takes the same selectors as for any other agent, and `current` is the
+default placement. Do not pass `new-child` or `new-top-level` here: those create the worktree
+and deliver the prompt in one step, leaving no moment to write the file in between. If the
+worker needs a fresh worktree, create it first without an agent, write the file into it, then
+`worker-start --worktree <exact selector> --agent opencode`.
 
-Create the terminal with **no `--prompt`**. That flag launches opencode as
-`opencode --prompt "<text>"`, which is a full handoff with no lifecycle preamble, and a
-worker started that way has no `ask` or `worker_done` target. Wait for `tui-idle` before
-sending, or the pointer races opencode's composer mount and lands in a pane that is not
-reading input yet.
-
-`dispatch` without `--inject` still creates the Dispatch context, so the Task, the Run, and
-`dispatch-show` all see it. `--return-preamble` returns the exact text `--inject` would have
-written — the lifecycle header plus the task spec, QUALITY CONTRACT included. **Write it to
-the file verbatim.** A preamble that was trimmed, reflowed, or summarized leaves the worker
-without the `taskId` and `dispatchId` it has to report against.
+The folder is `<short-slug>`, not `<task_id>`, because the file has to exist before
+`task-create` runs and there is no task id yet. That is the third row of the Working files
+table. Once the worker has its `taskId` it keeps its own files under `.orca/artifacts/<task_id>/`
+per item 1-1; both folders trace back to the task, one through the spec pointer and one
+through the id.
 
 Four things the file step has to get right:
 
-- **The path in the `--text` is absolute.** opencode resolves a relative path against its own
-  cwd, which is not necessarily the worktree root.
-- **`.orca/artifacts/<task_id>/` is the folder the worker already owns** under the Working
-  files rule, so the preamble lands where that task's scaffolding belongs and traces back to
-  the task that it dispatched. Create the folder if it does not exist.
-- **The `--text` stays one line.** No newlines, no blank lines, nothing a composer could read
-  as a submit. That is the entire reason this path exists, so do not append the spec, a
-  summary of it, or a second sentence on its own line.
-- **Write the file before the send**, not after. The pointer is useless to a worker that
-  reads it before the file exists, and opencode will report a missing file rather than wait.
+- **The path in `--spec` is absolute.** opencode resolves a relative path against its own cwd,
+  which is not necessarily the worktree root.
+- **The pointer is one line.** No newlines, no blank lines, no second sentence on its own line.
+  Pass `--task-title` too: without it Orca derives the title from the first line of `--spec`,
+  which is now the pointer, and every opencode task in `task-list` starts with `Read /...`.
+- **The file holds the full spec verbatim.** Task body, then the QUALITY CONTRACT with item 2
+  already substituted. A file that was trimmed, reflowed, or summarized starts the worker on
+  half a spec, and `task-list --json | grep -c '<<'` cannot see into it — check the file.
+- **Write the file before `task-create` or `worker-start`**, not after. The pointer is useless
+  to a worker that reads it before the file exists, and opencode reports a missing file rather
+  than waiting.
 
-### Why the preamble cannot go through `terminal send` as text
+### Why the spec is a pointer
 
-Orca does not truncate it. Measured against 1.4.195 on macOS with a raw-mode reader on the
-other end of the pty, `terminal send --text` delivered every byte at 2 KB, 8 KB, 16 KB,
-16,384 B, 20 KB, 40 KB, 100 KB and 200 KB, and a deliberately slow reader draining 64 bytes
-per 10 ms still lost nothing at 32 KB. The transport is flow-controlled, and its only ceiling
-— `TERMINAL_INPUT_MAX_BYTES`, 16 MiB — *rejects* the call with `Terminal input is too large
-for a safe terminal send.` rather than delivering a prefix.
+What arrives in opencode's composer is typed. On the company fork the prompt goes in as plain
+text rather than bracketed paste — opencode's composer mis-handles the paste wrapper — so every
+newline in the injected text is a key event, and whether the composer keeps accumulating or
+submits mid-text is decided by opencode's own paste-burst inference. Where that inference
+breaks depends on the opencode build, the pane size, and how busy the machine is, so there is
+no byte threshold to name and no size-dependent branch here.
 
-What loses the tail is opencode's composer. A send to opencode takes Orca's raw write path,
-because the bracketed-paste path is gated on the foreground agent being `claude` or `codex`
-and nothing else. So the preamble arrives without `ESC[200~`/`ESC[201~`, as an ordinary
-keystroke stream in which every newline is a key event, and whether the composer keeps
-accumulating or submits mid-preamble is decided by opencode's own paste-burst inference.
-Orca hands those bytes over in 16 KiB chunks separated only by an event-loop yield, so a
-longer preamble crosses more of those seams — but the seam that breaks the inference depends
-on the opencode build, the pane size, and how busy the machine is.
+The pointer removes the variable part from the keystroke stream. What `worker-start` injects
+is then Orca's fixed lifecycle header — about 2.7 KB on the fork's template — plus one line,
+the same size for a ten-line task and a three-hundred-line one. The spec itself is read from
+disk, whole or not at all. Orca does not truncate anything on the way: measured against
+1.4.195 on macOS with a raw-mode reader, terminal input delivered every byte up to 200 KB, and
+its only ceiling (`TERMINAL_INPUT_MAX_BYTES`, 16 MiB) rejects the call instead of delivering a
+prefix.
 
-**That is why there is no byte threshold here and no size-dependent branch.** A number picked
-for one host would be wrong on the next one, and being wrong looks like a worker that started
-on half a spec — which is worse than one that never started, because it reports
-`worker_done` against work nobody asked for. A file read has no such seam: opencode reads it
-whole or reports that it could not.
+### What `worker-start` gives back, and one warning that is normal
+
+An earlier version of this section bypassed `worker-start` for opencode entirely. That cost
+five things, all of which this path restores:
+
+- **Dispatch capability.** Minted only by `--inject`, so `ask` and `worker_done` are
+  authenticated again.
+- **Delivery receipt.** The `worker-start --json` result reports the prompt write, and the
+  created-terminal effect carries `paneAnchorTabId` when the worker pane was anchored to the
+  coordinator's tab.
+- **Supervised worker row.** `worker-show`, `worker-read`, `worker-list` report the Dispatch
+  as supervised, and `worker-release` actually closes the terminal.
+- **Auto-close on settlement.** The opt-in close-on-`worker_done` runs through the release
+  path, so it only fires for a Dispatch that has a worker row.
+- **Worker pane placement.** The pane splits beside the coordinator. The bypass produced the
+  "opencode worker only adds a tab next to the coordinator" report, three times, with zero
+  `worker-*` lines in the diagnostic log — two symptoms of the same missing `worker-start`.
+
+The warning to expect: **on Windows the receipt may carry `submit: unverified`.** ConPTY
+swallows opencode's OSC title, so Orca cannot observe the worker's turn start after Enter.
+The fork no longer promotes that to a failure — the write succeeded, the Dispatch is live, the
+capability was issued — it just says it could not confirm the submit. Treat it as a prompt to
+run the `worker-read` on line four and look for the worker actually reading the spec file. If
+the pointer is sitting unsubmitted in the composer, report that as a delivery failure; do not
+run a second `worker-start` against the same task to fix it, because that creates a second
+Dispatch, and do not fall back to `terminal send` with the spec text.
 
 ### Why this deviates from the served guide
 
-The guide names `worker-start` as the preferred path for every agent and reserves
-`terminal send` for bare shells and full handoffs. It is right about the general case and
-wrong for opencode, for a reason it does not cover. `--inject` writes the preamble, waits,
-presses Enter, then polls for up to 30 seconds for the worker to enter a `working` state —
-and both of those waits are built for other agents:
+The guide puts the full spec in `--spec`. That is right for `claude` and `codex`, whose
+composers take the bracketed-paste path, and wrong for opencode for the reason above. This
+section keeps the guide's command and moves only where the spec lives. The earlier bypass was
+justified against the upstream macOS app, whose opencode path had no composer-readiness wait,
+an open-loop settle timer, and a stall that the coordinator loop swallowed while the Dispatch
+stayed active. The company fork closed all three (details in the 출처 section), which is why
+the bypass is gone and the pointer stays.
 
-- The settle wait before Enter is driven by real terminal output only for `claude` and
-  `codex`. Every other agent, opencode included, gets an open-loop `500 ms + bytes/4096`
-  timer instead.
-- The turn-start poll reads the agent's reported status. Observing nothing, it raises
-  `agent_prompt_stalled` — which the coordinator loop swallows as "turn start was not
-  observed" and leaves the Dispatch active. The preamble then sits unsubmitted in the
-  composer while the Dispatch says it is running, and `check --wait` waits for a
-  `worker_done` that is never coming. **Both sides wait for each other**, the same deadlock
-  shape as a missing line 5.
-
-`terminal send` returns as soon as the bytes are written, so a worker that never started is
-visible immediately instead of thirty seconds later as a swallowed exception.
-
-### What the split gives up
-
-- **No dispatch capability.** Orca mints one only on `--inject`. It verifies a capability
-  only when the Dispatch carries one, so `ask` and `worker_done` still work unchanged; the
-  Dispatch is simply unauthenticated. Never hand a worker a capability by hand.
-- **No delivery receipt.** `terminal send` reports bytes written, not a started turn, and
-  writing the file proves nothing about whether anyone read it. Confirm the worker picked the
-  task up with `ORCA orchestration worker-read --dispatch <dispatch_id> --limit 50 --json`
-  before entering the `check --wait` loop. If it never started, report that — do not resend
-  the pointer, because it is already in the pane.
-- **The preamble is on disk in the worktree.** It carries the `dispatchId`, and
-  `.orca/artifacts/` is a working-file namespace, not a secret one. That is the same exposure
-  as any dispatch spec and needs no special handling, but do not put anything in a task spec
-  you would not put in a file in the repo — that was already true, and this makes it literal.
-- **The spec is no longer constrained.** This is what the file buys back: blank lines,
-  fenced code, and long specs are all fine now, because nothing in the preamble is ever
-  interpreted as keystrokes. The one line that is still typed is the pointer.
-- **No supervised worker row.** A low-level dispatch never creates a `worker_dispatches`
-  row, so `worker-show`, `worker-read`, and `worker-list` report the Dispatch as
-  `unsupervised`, and `worker-release` returns `retained` with `no_owned_resource` and
-  closes nothing. The coordinator that created the terminal owns closing it — `terminal
-  close` once the report is confirmed — or leaves it live for the user. The **Coordinator
-  side** rule above still binds: check the claim against the diff first.
-
-This section is distribution policy, not Orca behavior, and it covers opencode only —
-`claude` and `codex` workers keep the composed `worker-start`. Drop it if a later Orca gives
-opencode all three of the things this works around: the output-driven settle gate, a status
-its turn-start poll can see, and bracketed paste on the `terminal send` path.
+This section is distribution policy, not Orca behavior, and it covers opencode only. Drop it
+when the fork, or upstream, gives opencode a prompt path in which a long multi-line spec
+cannot be submitted early by the composer — bracketed paste that opencode honors, or an
+out-of-band spec delivery — and confirm that on the fork build, not on `/Applications/Orca.app`.
 
 ## Coordinator field notes
 
@@ -458,7 +450,7 @@ working in. Scope sweeps to the Run you are coordinating instead of reading the 
 
 ## 출처와 커스터마이징 기록
 
-Orca 사내 배포판이 번들한 스킬이다. **업스트림 원문에 `Working files` 절, `Bundled quality skills` 절, `Hand opencode workers their prompt as a file, never as terminal text` 절, `Coordinator field notes` 절, 그리고 이 절만 추가했고, 나머지 본문과 frontmatter는 손대지 않았다.**
+Orca 사내 배포판이 번들한 스킬이다. **업스트림 원문에 `Working files` 절, `Bundled quality skills` 절, `opencode workers go through worker-start, with the spec as a file pointer` 절, `Coordinator field notes` 절, 그리고 이 절만 추가했고, 나머지 본문과 frontmatter는 손대지 않았다.**
 
 - 출처: `stablyai/orca` · `skills/orchestration/SKILL.md` (커밋 `aac38d69`, 2026-09-09). 본문의 마지막 내용 변경은 `bba68b1b`이고, `aac38d69`까지 상류 stub 8종은 바이트 단위로 같다 — 커밋 표기만 대조 시점(2026-09-10 재확인)에 맞춰 올렸다.
 - 상류 갱신(2026-09-08): `bba68b1b`가 stub 8종을 전부 줄였다. 이 스킬에서는 description이 압축되고, `Load the full guide` 절이 `Load the version-matched guide`로 바뀌면서 구버전 바이너리용 부트스트랩 절(`If an older Orca does not recognize skills get`)이 그 절 끝 한 문단으로 흡수됐다. 참조 문서 분할 로딩(`skills get orchestration --reference references/<file>.md`, `--references`)도 새로 들어갔는데, **설치된 1.4.198은 아직 이 플래그를 모른다** — `orca skills get orchestration --references`가 `Unknown flag --references ... Valid flags: --environment, --full, --help, --json, --pairing-code, --topic`으로 거절한다(2026-09-08 확인). stub이 그 경우 `--full`로 폴백하라고 적어 두었고, 1.4.198에서는 `--full`과 기본 출력이 449줄로 동일하다. 커스터마이징은 이 변경과 겹치지 않는다.
@@ -466,8 +458,9 @@ Orca 사내 배포판이 번들한 스킬이다. **업스트림 원문에 `Worki
 - 추가 2건: `Working files` 절과 규약 1-1번. 산출물이 아닌 작업 파일을 `.orca/artifacts/` 아래에만 쓰게 한다. 디스패치 여부와 무관하게 적용되므로 최상위 절로 뒀다 — 사용자가 겪은 문제는 디스패치 없이 그냥 자기 프로젝트에서 스킬을 쓸 때 폴더가 제멋대로 생기는 것이었다. 사내 Orca 체크아웃(`enterprise/samsungds`)에 같은 취지의 `Work Artifacts` 절이 `f1c3963d`로 커밋돼 있지만(2026-09-01 확인), 상류 main `bba68b1b`에도 없고, 1.4.198이 서비스하는 449줄 가이드에도 없다(2026-09-08 재확인 — `artifact`·`working file`·`report-path` 검색 결과가 워커 배치 문단과 `worker_done` 예시뿐이다). 그 빌드가 배포될 때까지는 이 절이 유일하게 실제로 걸리는 경로다. 규약 번호를 1-1로 둔 것은 뒤 번호를 밀지 않기 위해서다 — README와 `docs/how-it-works.md`가 2~6번을 그 번호로 참조한다. 상류가 이 규약을 릴리스하면 이 절을 지우고 가이드를 따른다.
 - 추가 3건: `Coordinator field notes` 절. 업스트림 가이드가 다루지 않아 코디네이터가 실제로 시간을 버린 두 지점을 적었다 — `task-create`의 `--task-title`/`--display-name` 미문서화(없으면 spec 첫 줄에서 제목을 파생한다), `worker-list`의 `legacy_ambiguous` 행이 누수가 아니라는 것. Orca 1.4.191 소스(`src/shared/orchestration-task-display.ts`, `src/main/runtime/orchestration/db/worker-terminal/worker-terminal-release.ts`)와 실제 CLI 실행으로 확인했다(2026-08-29). 1.4.198이 서비스하는 449줄 가이드에도 `task-title`·`display-name`·`legacy_ambiguous`가 한 번도 나오지 않는다(2026-09-08 재확인). 업스트림 가이드가 이 둘을 문서화하면 이 절은 지운다.
 - 추가 4건: 규약 1-2번과 라우팅 표의 `ponytail` 행. 해법의 크기를 정하는 사다리를 spec에 싣는다. 상류 ponytail(`DietrichGebert/ponytail` `356918eba965`)은 훅과 opencode 플러그인으로 매 턴 규칙 전문(~1,300 토큰)을 주입하는 경로도 제공하지만, 이 배포판은 쓰지 않는다 - 워커 호스트마다 설정이 필요하고, Claude Code용 `SessionStart` 훅이 statusline 설정을 제안하는 지시를 세션에 주입해 무인 워커의 작업을 흐트러뜨린다. 대신 사다리 본문만 규약에 인라인해 워커 종류와 설치 상태에 무관하게 걸리도록 했다. 상류 본문과 충돌하는 두 지점(테스트 생략 허용, 설명 3줄 상한)은 1-2번 안에서 2번과 6번이 이긴다고 명시했다.
-- 추가 5건: `Hand opencode workers their prompt as a file, never as terminal text` 절. opencode 워커에는 `--inject`(따라서 `worker-start`)를 쓰지 않고 `dispatch --return-preamble` + `terminal send`로 프롬프트를 전달한다. **이 절은 상류 가이드와 정면으로 어긋나므로** — 가이드는 모든 에이전트에 `worker-start`를 preferred로 두고 `terminal send`는 bare shell과 full handoff 전용으로 둔다 — 근거를 남긴다. Orca 1.4.195 소스에서 확인한 두 지점이다(2026-09-03). ① `out/main/index.js`의 `createAgentPromptRenderGate`는 `xpi(agent) → agent === 'claude' || agent === 'codex'`일 때만 붙고, 나머지는 `out/shared/agent-prompt-injection.js`의 `getAgentPromptSubmitDelayMs` = `500ms + ceil(bytes/4096)`(win32는 `bytes/64`) 개루프 타이머로 Enter를 친다. ② Enter 뒤 `hmn()`이 최대 30초(`AP = 3e4`) 동안 워커의 `working` 전환을 폴링하고, 못 보면 `agent_prompt_stalled`을 던진다. 코디네이터 루프는 그것을 `pmn()`으로 잡아 "turn start was not observed. The preamble is already in the pane"로 삼키고 dispatch를 active로 남긴다 — 프리앰블은 composer에 미제출로 남고 코디네이터는 오지 않을 `worker_done`을 `check --wait`로 기다린다. 5번 줄이 빠졌을 때와 같은 상호 대기다. 대가는 절 안에 넷으로 적었다(capability 미발급, 전달 리시트 없음, 프리앰블이 디스크에 남음, 워커 감독 행 없음). 상류가 opencode에 출력 기반 정착 게이트와 관측 가능한 상태를 주면 이 절을 지운다. **1.4.198에서 재확인했다(2026-09-08):** `createAgentPromptRenderGate`의 게이트는 여전히 `['claude','codex'].includes(launchAgent ?? foregroundAgent ?? '')`이고, `getAgentPromptSubmitDelayMs`도 `500ms + ceil(bytes/4096)`(win32는 `bytes/64`) 그대로다. dispatch 경로가 `agent_prompt_stalled`을 "turn start was not observed. The preamble is already in the pane, so the dispatch stays active instead of being resent."로 삼키는 것도 그대로다.
-- 추가 5-1건(2026-09-03): 같은 절에서 **프리앰블을 `terminal send --text`로 보내지 않고 `.orca/artifacts/<task_id>/dispatch-preamble.md`에 쓴 뒤 그 경로 한 줄만 보내도록** 바꿨다. 계기는 긴 프롬프트가 워커에 다 전달되지 않는다는 사용자 보고였다. **원인은 Orca가 아니다.** 1.4.195에 프로브 터미널(raw 모드 리더)을 붙여 실측한 결과 `terminal send --text`는 2 KB·8 KB·16 KB·16,384 B·20 KB·40 KB·100 KB·200 KB에서 손실이 0이었고, 64바이트를 10 ms마다 읽는 의도적으로 느린 리더에서도 32 KB까지 손실이 0이었다. 소스도 같다 — `out/shared/terminal-input.js`의 `TERMINAL_INPUT_CHUNK_MAX_BYTES`(16 KiB)로 쪼개 쓰지만 유일한 상한 `TERMINAL_INPUT_MAX_BYTES`(16 MiB)는 자르는 게 아니라 `Terminal input is too large for a safe terminal send.`로 거부한다. 잘리는 곳은 opencode의 composer다: `out/main/index.js`의 `terminal.send` 핸들러는 `isTerminalRunningSettledPromptAgent`일 때만 bracketed paste 경로(`sendTerminalAgentPrompt`)를 타고, opencode는 원시 경로(`sendTerminal` → `writeTerminalInputChunks`)로 가 개행이 전부 키 이벤트가 된다. 1.4.198에서도 그 술어는 `s !== 'claude' && s !== 'codex'`이면 `false`를 돌려주는 그대로다(2026-09-08 재확인). 16 KiB 청크 사이 간격은 `setImmediate` 한 번뿐이라 프리앰블이 길수록 그 이음매를 더 많이 지나지만, **어느 이음매에서 composer의 붙여넣기 추론이 깨지는지는 opencode 빌드·pane 크기·머신 부하에 달려 있어 Orca가 이름 붙일 수 있는 바이트 임계값이 없다.** 그래서 크기 분기를 두지 않고 opencode는 무조건 파일 경유로 고정했다 — 임계값을 잘못 잡으면 워커가 절반짜리 스펙으로 시작하고, 그건 아예 시작하지 않는 것보다 나쁘다. 상류가 opencode에도 bracketed paste를 태우면 이 변경을 되돌린다.
+- 추가 5건(2026-09-03, **2026-09-11에 되돌림 — 5-2번 참조**): 당시 제목은 `Hand opencode workers their prompt as a file, never as terminal text`였고, opencode 워커에는 `--inject`(따라서 `worker-start`)를 쓰지 않고 `worktree create --agent opencode` 또는 `terminal create` + `dispatch --return-preamble` + `terminal send`로 프롬프트를 전달하게 했다. 근거는 Orca 1.4.195·1.4.198 **업스트림** 앱의 `out/main/index.js`에서 확인한 두 지점이었다. ① `createAgentPromptRenderGate`가 `claude`·`codex`에만 붙고 나머지는 `getAgentPromptSubmitDelayMs` = `500ms + ceil(bytes/4096)`(win32는 `bytes/64`) 개루프 타이머로 Enter를 친다. ② Enter 뒤 최대 30초 동안 워커의 `working` 전환을 폴링하고 못 보면 `agent_prompt_stalled`을 던지며, 코디네이터 루프가 그것을 "turn start was not observed. The preamble is already in the pane"로 삼키고 dispatch를 active로 남긴다. 이 판단은 그 자체로는 맞았지만 **확인 대상이 틀렸다** — `/Applications/Orca.app`은 사내 포크가 아니라 업스트림 빌드라, 포크가 고친 내용이 전부 "없다"로 나온다.
+- 추가 5-1건(2026-09-03, **파일 포인터 기법은 5-2번에서 유지**): 같은 절에서 프리앰블을 `terminal send --text`로 보내지 않고 파일에 쓴 뒤 경로 한 줄만 보내도록 바꿨다. 계기는 긴 프롬프트가 워커에 다 전달되지 않는다는 보고였고, **원인은 Orca가 아니다.** 1.4.195에 프로브 터미널(raw 모드 리더)을 붙여 실측한 결과 터미널 입력은 2 KB~200 KB에서 손실 0이었고, 유일한 상한 `TERMINAL_INPUT_MAX_BYTES`(16 MiB)는 자르는 게 아니라 거부한다. 잘리는 곳은 opencode의 composer다 — 개행이 전부 키 이벤트가 되고, 어느 이음매에서 붙여넣기 추론이 깨지는지는 opencode 빌드·pane 크기·머신 부하에 달려 있어 Orca가 이름 붙일 수 있는 바이트 임계값이 없다. 그래서 크기 분기를 두지 않는다. 이 사실은 포크의 평문 경로(5-2번)에서도 그대로다 — 평문 역시 키 입력이다.
+- 추가 5-2건(2026-09-11): **opencode 워커도 `worker-start`로 띄우고, 스펙만 파일 포인터로 넘기도록 절을 다시 썼다.** 계기는 사내 Windows 빌드 v1.4.199-samsungds에서 "opencode 워커만 패널 자동 분할이 안 되고 조율자 옆에 탭만 추가된다, `orca-diagnostic.log`에 worker 줄이 0개"라는 신고가 3회째 들어온 것이다. 원인은 Orca가 아니라 5번 절의 우회였다. 포크 소스 `/Users/daegun/Workspace/orca`(브랜치 `enterprise/samsungds`, `git describe` = `v1.4.199-samsungds`)에서 확인한 사실: ⓐ 워커 패널 자동 분할 앵커(`paneGroupPlacement`, 리시트의 `paneAnchorTabId`)는 `worker-start`가 워커 터미널을 만들 때만 붙는다 — `src/main/runtime/rpc/methods/orchestration/worker/local-worker-start.ts` → `worker-pane-anchor-terminal.ts`(`worker-pane-main` 로그 줄)와 렌더러 `src/renderer/src/hooks/ipc-events/terminal-presentation-ipc-bridge.ts`(`worker-pane-renderer` 로그 줄). `terminal create`·`worktree create`는 일반 터미널 생성이라 앵커가 없고 활성 그룹에 탭만 추가된다. 완료 탭 자동 닫기(`src/main/runtime/orchestration/settled-worker-terminal-autoclose.ts`)도 `requestWorkerTerminalRelease(dispatchId)`를 타므로 감독 행이 있어야 동작한다. ⓑ 5번의 우회 근거 세 가지는 포크에서 해소됐다. opencode는 bracketed paste 대신 평문으로 쓴다(`src/shared/tui-agent-config.ts`의 `promptDeliveryMode: 'plain-text'`, 커밋 `6cd637684c`). 쓰기 전에 composer 준비 신호를 기다린다(`OrcaRuntimeService.waitForAgentComposerReady`, `worker-dispatch-input.ts`의 `awaitWorkerComposer`, 커밋 `28164e79d2`; `worker-prompt-composer … ready=` 로그 줄). 상태를 읽을 수 없는 pane에서는 stall을 실패로 승격하지 않는다(`src/main/runtime/agent-prompt-submit-evidence.ts`의 `assertAgentPromptRescuedIfStalled`; 리시트에 `submit: 'unverified'` 경고를 남기고 capability는 발급된다 — Windows ConPTY가 opencode의 OSC 제목을 삼켜 정상적으로 나온다). ⓒ 같은 커밋을 업스트림 앱에서 세면 `grep -a -c` 기준 `promptDeliveryMode` 0건, `worker-pane-main` 0건, `waitForAgentComposerReady` 0건이다 — `/Applications/Orca.app`(CFBundleShortVersionString 1.4.199)은 업스트림 빌드라 **포크 동작의 확인 경로로 쓰지 않는다.** 앞으로 Orca 동작 확인은 포크 소스 또는 Windows 설치본의 `resources/app.asar`에서 한다. 파일 포인터는 유지했다 — 평문 경로도 키 입력이라 긴 스펙의 중간 제출 위험은 그대로이고, 포인터로 넘기면 주입 텍스트가 고정 라이프사이클 헤더(`src/main/runtime/orchestration/preamble.ts` 템플릿 리터럴 합계 2,731 B)와 한 줄뿐이라 태스크 길이와 무관하다. 파일 폴더는 task-create 전이라 `<task_id>`가 없으므로 `.orca/artifacts/<short-slug>/dispatch-spec.md`로 두고 Working files 표에 행을 추가했다. 5번 절 끝의 삭제 조건("상류가 opencode에 정착 게이트·관측 가능한 상태·bracketed paste를 주면 지운다")은 포크 빌드 v1.4.194-samsungds 이후에서 앞의 둘이 충족됐고, 셋째는 평문 경로로 대체돼 더 이상 성립하지 않으므로 우회 자체를 지웠다. 남은 커스터마이징(파일 포인터)의 삭제 조건은 절 끝에 새로 적었다. 이 맥에는 opencode가 없고 앱도 업스트림이라 실제 전달 검증은 Windows 포크 빌드에서만 가능하다 — 확인 절차는 README의 opencode 절에 있다.
 - 이 절이 유일한 정본이다. `orca skills get orchestration`이 서비스하는 가이드에는 품질 스킬 라우팅도 작업 파일 위치 규약도 없으므로(1.4.198이 서비스하는 449줄 가이드에 해당 내용 없음, 2026-09-08 확인), 이 스킬 파일만으로 자립 동작하도록 규약 본문을 그대로 담았다. Orca 소스를 수정할 필요가 없다.
 - frontmatter의 `description`은 업스트림 그대로다. Orca가 이 필드로 스킬을 라우팅하므로 바꾸지 않는다.
 - **주의:** 이 스킬은 업스트림과 이름·경로가 같다. `orca skills update --skill orchestration`을 실행하면 위 커스터마이징이 업스트림 원문으로 덮인다. 갱신은 이 저장소에서 내려받는 방식으로만 한다.

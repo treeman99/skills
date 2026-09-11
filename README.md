@@ -192,45 +192,65 @@ task id를 우선하는 이유는 코디네이터와 `worker_done` 페이로드�
 의존한다 — 사본이 낡았거나, 설치 뒤 재시작을 안 했거나, `permission.skill`이 막고 있으면
 조용히 빠진다. 경로 1은 그 무엇에도 의존하지 않는 유일한 경로다.
 
-### opencode 워커는 프롬프트를 파일로 받는다
+### opencode 워커도 `worker-start`로 띄우되, 스펙은 파일 포인터로 넘긴다
 
-같은 태스크라도 **워커가 opencode면 코디네이터가 프롬프트를 다른 방법으로 전달한다.**
-claude와 codex 워커는 `worker-start` 한 번으로 시작하지만, opencode 워커는 터미널을 먼저
-띄우고, `dispatch --return-preamble`로 받은 프리앰블을 워커 워크트리의
-`.orca/artifacts/<task_id>/dispatch-preamble.md`에 쓴 다음, **그 파일을 읽으라는 한 줄만**
-`terminal send`로 보낸다. `orchestration` 스킬이 그렇게 하도록 지시하고 있으니, 로그에서
-보이더라도 잘못된 것이 아니다.
+opencode 워커도 claude·codex 워커와 같이 **`worker-start` 한 번으로 시작한다.** 다른 점은
+스펙의 모양 하나다. 코디네이터가 태스크 본문과 QUALITY CONTRACT를 워커 워크트리의
+`.orca/artifacts/<짧은-이름>/dispatch-spec.md`에 먼저 쓰고, `task-create --spec`(또는
+`worker-start --spec`)에는 **"그 절대경로를 전부 읽고 정확히 따르라"는 한 줄만** 넣는다.
+`orchestration` 스킬이 그렇게 하도록 지시하고 있으니, 워커 입력창에 스펙 전문 대신 경로
+한 줄이 보이더라도 잘못된 것이 아니다.
 
-이유는 두 가지다.
+**왜 `worker-start`인가.** 사내 Orca 빌드에서 워커 패널 자동 분할, 워커 감독 행,
+dispatch capability, 전달 리시트, 완료 시 탭 자동 닫기는 전부 `worker-start`가 워커
+터미널을 만들 때만 붙는다. `terminal create`나 `worktree create --agent opencode`로 띄운
+터미널은 일반 터미널이라 조율자 옆에 탭만 추가되고, 트러블슈팅 로그에 worker 줄이 한 줄도
+남지 않는다. "opencode 워커만 분할이 안 된다"는 신고가 바로 이것이었다 — 이전 판의 이 절이
+opencode에 한해 `worker-start`를 우회하게 했기 때문이고, 그 판단은 사내 포크가 아니라
+업스트림 앱을 보고 내린 것이었다. 지금은 우회를 없앴다.
 
-**하나, Orca가 프롬프트를 주입할 때 붙이는 정착 게이트가 claude와 codex 전용이다.**
-opencode에는 그 대신 고정 시간 대기가 걸리고, 주입 뒤 워커가 실제로 일을 시작했는지
-지켜보는 30초 관찰도 opencode의 상태를 읽지 못하면 실패한다. 그렇게 되면 프리앰블은
-입력창에 제출되지 않은 채로 남고 dispatch는 실행 중으로 표시되어, 코디네이터가 오지 않을
-완료 보고를 계속 기다린다. 그래서 `--inject`(따라서 `worker-start`)를 쓰지 않는다.
+**왜 파일 포인터인가.** opencode의 입력창은 프롬프트를 키 입력으로 받는다(사내 빌드는
+bracketed paste 대신 평문으로 쓴다). 개행 하나하나가 키 이벤트가 되고, 긴 스펙의 어디서
+입력창이 "붙여넣기 중"이라는 판단을 놓고 제출해 버리는지는 opencode 버전과 화면 크기,
+그때의 머신 부하에 달려 있다. **안전한 길이라는 게 존재하지 않아서** 크기로 나누지 않고
+opencode는 항상 파일로 넘긴다. 그러면 주입되는 텍스트는 Orca의 고정 라이프사이클
+헤더(약 2.7 KB)와 포인터 한 줄뿐이라 태스크 길이와 무관하게 크기가 같다. Orca는 자르지
+않는다(200 KB까지 손실 0). 파일은 통째로 읽히거나, 못 읽었다고 보고되거나 둘 중 하나다.
 
-**둘, 긴 프리앰블을 터미널 텍스트로 보내면 뒷부분이 잘린다.** 자르는 것은 Orca가 아니다 —
-1.4.195에 프로브를 붙여 재보면 `terminal send`는 200 KB까지 한 바이트도 잃지 않고, 유일한
-상한인 16 MiB는 잘리는 대신 거부된다. 잘리는 곳은 opencode의 입력창이다. Orca가
-bracketed paste로 감싸주는 경로도 claude·codex 전용이라, opencode는 프리앰블을 그냥
-키 입력으로 받는다. 그러면 개행 하나하나가 키 이벤트가 되고, 어디서 입력창이 "붙여넣기
-중"이라는 판단을 놓고 제출해 버리는지는 opencode 버전과 화면 크기, 그때의 머신 부하에
-달려 있다. **안전한 길이라는 게 존재하지 않아서** 크기로 나누지 않고 opencode는 항상 파일로
-보낸다. 파일은 통째로 읽히거나, 못 읽었다고 보고되거나 둘 중 하나다.
+그래서 opencode 워커를 쓰면 **눈에 보이는 차이가 둘** 있다.
 
-그래서 opencode 워커를 쓰면 **눈에 보이는 차이가 셋** 있다.
+- **워커 터미널에 스펙 대신 경로 한 줄이 뜬다.** 내용은
+  `.orca/artifacts/<짧은-이름>/dispatch-spec.md`에 있다. 폴더가 `<task_id>`가 아닌 이유는
+  파일을 `task-create` 전에 써야 해서 아직 task id가 없기 때문이다.
+- **Windows에서는 `worker-start` 리시트에 `submit: unverified` 경고가 붙을 수 있다.**
+  ConPTY가 opencode의 제목 신호를 삼켜 Orca가 턴 시작을 관측하지 못하는 것이고, 사내
+  빌드는 이것을 실패로 올리지 않는다. dispatch는 살아 있고 capability도 발급됐다.
+  코디네이터는 `worker-read`로 워커가 실제로 파일을 읽기 시작했는지 보고 대기 루프에
+  들어간다.
 
-- **워커 터미널에 프리앰블 대신 한 줄이 뜬다.** 스펙 전문이 입력창에 나타나지 않는 것이
-  정상이다. 내용은 `.orca/artifacts/<task_id>/dispatch-preamble.md`에 있다.
-- **워커 터미널이 자동으로 닫히지 않는다.** `worker-start`를 거치지 않은 dispatch는 감독
-  대상이 아니라서 `worker-release`가 아무것도 닫지 않는다. 코디네이터가 `terminal close`로
-  정리하거나 확인용으로 열어 둔다.
-- **태스크를 집어 들었는지 한 번 더 확인한다.** `terminal send`는 바이트를 썼다는 것만
-  알려주고 파일을 썼다는 것도 누가 읽었다는 증거가 아니므로, 코디네이터가 `worker-read`로
-  워커가 실제로 시작했는지 보고 나서 대기 루프에 들어간다.
-
-`ask`와 `worker_done`은 그대로 동작하고, QUALITY CONTRACT도 프리앰블 파일에 그대로 실린다.
+`ask`와 `worker_done`은 그대로 동작하고, QUALITY CONTRACT도 스펙 파일에 그대로 실린다.
 품질 게이트는 claude·codex 워커와 똑같이 걸린다.
+
+#### Windows 사내 빌드에서 확인하는 법
+
+이 절의 동작은 사내 포크 빌드(v1.4.194-samsungds 이후, 확인은 v1.4.199-samsungds)에만
+있다. 편집 머신의 `/Applications/Orca.app`은 업스트림 빌드이고 opencode도 없어서, 실제
+전달 검증은 Windows에서만 할 수 있다.
+
+1. Orca 설정에서 트러블슈팅 로그(`orca-diagnostic.log`)를 켠다. 기본은 꺼져 있다.
+2. opencode 워커를 한 번 띄운다. `worker-start --json` 리시트의 created-terminal 항목에
+   `paneAnchorTabId`가 있는지 본다.
+3. 로그에서 네 줄을 찾는다. 하나라도 없으면 `worker-start`를 거치지 않은 것이다.
+
+```text
+worker-pane-main … agent=opencode skip=none surface=visible
+worker-pane-renderer … skip=none group=<id>
+worker-prompt-composer … ready=true
+worker-prompt-sent … submit=<verified|unverified|resent>
+```
+
+4. 워커 패널이 조율자 옆에 **분할**되어 열렸는지(탭 추가가 아니라), `worker-read`에
+   워커가 스펙 파일을 읽는 출력이 있는지 본다.
 
 ### 라우팅
 
@@ -261,7 +281,7 @@ flowchart TD
     MODE -->|"디스패치"| SPEC["QUALITY CONTRACT 를 spec 에 인라인<br/>2번 슬롯을 태스크 유형으로 치환"]
     SPEC --> AG{"워커가<br/>opencode 인가"}
     AG -->|"아니다"| WK["worker-start<br/>claude / codex"]
-    AG -->|"그렇다"| WKO["dispatch --return-preamble<br/>→ 프리앰블을 파일로 쓰고<br/>terminal send 로 경로 한 줄"]
+    AG -->|"그렇다"| WKO["스펙을 파일로 쓰고<br/>--spec 에는 경로 한 줄<br/>→ worker-start --agent opencode"]
 
     SELF --> K["규약 1 · 범위 확정<br/>karpathy-guidelines"]
     WK --> K
@@ -274,7 +294,7 @@ flowchart TD
 
     V --> DONE["규약 6 · worker_done<br/>검증 명령과 결과를 본문에"]
     DONE --> CONF["코디네이터가 독립 확인<br/>diff 또는 검증 명령"]
-    CONF --> REL["worker-release<br/>확인한 뒤에만<br/>opencode 는 terminal close"]
+    CONF --> REL["worker-release<br/>확인한 뒤에만"]
     V -.->|"직접 수행이었다면"| SREP["사용자에게 바로 보고<br/>5·6번은 보낼 대상이 없다"]
 
     IMPL -.->|"버그·예상 밖 동작"| S["규약 3 · 근본 원인 추적<br/>systematic-debugging"]
