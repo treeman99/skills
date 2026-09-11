@@ -251,6 +251,13 @@ worker-prompt-sent … submit=<verified|unverified|resent>
 
 4. 워커 패널이 조율자 옆에 **분할**되어 열렸는지(탭 추가가 아니라), `worker-read`에
    워커가 스펙 파일을 읽는 출력이 있는지 본다.
+5. `worker-show --dispatch <id> --json`의 `result.terminalResource.ownershipState`가
+   `owned`로 남아 있는지 본다. `user_owned`(사유 `user_takeover`)로 바뀌어 있고 아무도
+   워커 패널에 타이핑하지 않았다면, 포크 커밋 `52eeafc5a0` 이전 빌드다 — 그 빌드의
+   렌더러는 분할로 보이게 된 워커 패널에 마우스 휠이 닿기만 해도 opencode의 마우스 추적
+   보고를 사용자 입력으로 잡아 소유권을 넘기고 출력 아카이브를 지운다. 프롬프트 자체는
+   `worker-prompt-sent`가 찍힌 시점에 PTY에 쓰였다. 수정 빌드가 나오기 전까지는 설정의
+   워커 패널 자동 분할(`autoSplitOrchestrationWorkerPanes`)을 끄면 정상 동작한다.
 
 ### 라우팅
 
