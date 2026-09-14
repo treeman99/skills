@@ -170,9 +170,11 @@ task id를 우선하는 이유는 코디네이터와 `worker_done` 페이로드�
 **워커는 spec만 본다.** 이 README도 스킬 파일도 읽지 않으므로, 규칙은 코디네이터가 보내는
 텍스트에 실려야 한다. QUALITY CONTRACT의 1-1번이 그 역할이다.
 
-`orca skills get orchestration`이 서비스하는 가이드에는 이 규약이 없다. 사내 Orca 소스에는
-같은 취지의 변경이 들어갔지만(`f1c3963d`) 아직 빌드·배포 전이라, 그때까지는 이 번들이
-유일하게 실제로 걸리는 경로다. 배포되면 이 절은 지우고 가이드를 따른다.
+`orca skills get orchestration`이 서비스하는 가이드에는 이 규약이 없다. 사내 Orca 가이드에
+같은 취지의 절(`f1c3963d`)이 v1.4.198-samsungds까지 있었지만 상류 v1.4.199 머지에서
+빠졌고, v1.4.200-samsungds와 상류 v1.4.201에도 없다(2026-09-14 확인). 그래서 지금은 이
+번들이 유일하게 실제로 걸리는 경로다. 서비스 가이드가 이 규약을 다시 담으면 이 절은 지우고
+가이드를 따른다.
 
 ## 동작 방식
 
@@ -493,8 +495,8 @@ Copilot CLI는 넘는 스킬을 **경고 없이 버린다**. 이 번들은 `~/.c
 
 | 스킬 | 상류 | 커밋 | 라이선스 |
 |---|---|---|---|
-| `orchestration` | `stablyai/orca` | `aac38d69` | 상류 저장소 라이선스 |
-| `orca-cli` | `stablyai/orca` | `aac38d69` | 상류 저장소 라이선스 |
+| `orchestration` | `stablyai/orca` | `37631030` | 상류 저장소 라이선스 |
+| `orca-cli` | `stablyai/orca` | `37631030` | 상류 저장소 라이선스 |
 | `karpathy-guidelines` | `multica-ai/andrej-karpathy-skills` | `2c606141936f` | MIT |
 | `ponytail` | `DietrichGebert/ponytail` | `356918eba965` | MIT (Dietrich Gebert) |
 | `test-driven-development` | `obra/superpowers` | `b36e0829c6d0` | MIT (Jesse Vincent) |
