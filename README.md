@@ -14,16 +14,16 @@
 
 ## 무엇이 들어 있나
 
-### Orca 번들 스킬 — `stablyai/orca` `37631030` (2026-09-13)
+### Orca 번들 스킬 — `stablyai/orca` `775a9326` (2026-09-15)
 
 Orca가 `orca skills install`로 설치하는 스킬 전부다. 8종이고, 이름은 설치된 Orca의
 `orca skills list --json`이 내놓는 목록과 맞춰 확인한다.
 
-커밋은 `aac38d69`에서 `37631030`으로 올렸지만 **`skills/` 아래는 하나도 바뀌지
-않았다.** 그 사이 상류는 v1.4.200·v1.4.201을 릴리스했고 같은 날 v1.4.202 태그도
-찍었지만(릴리스 브랜치라 main 조상은 아니다), 세 태그와 main HEAD 모두 stub 8종이
-`aac38d69`와 바이트 단위로 같다. 커밋만 올린 것은 어느 시점까지 대조했는지를 남기기
-위해서다. 그 전 갱신(`bba68b1b` → `aac38d69`)도 배포 경로 수정뿐이라 stub은 그대로였다.
+커밋은 `37631030`에서 `775a9326`으로 올렸지만 **`skills/` 아래는 하나도 바뀌지
+않았다.** 그 사이 상류는 v1.4.203을 릴리스했지만(태그 `776e424e`, 릴리스 브랜치라 main
+조상은 아니다), 그 태그와 main HEAD 모두 stub 8종이 `37631030`과 바이트 단위로 같다.
+커밋만 올린 것은 어느 시점까지 대조했는지를 남기기 위해서다. 그 전 두 갱신
+(`bba68b1b` → `aac38d69` → `37631030`, v1.4.200~v1.4.202)도 stub은 그대로였다.
 
 **본문은 설치된 앱보다 상류 쪽이 앞서 있을 수 있다.** stub의 마지막 내용 변경은
 `bba68b1b`였다 — 8종의 description을 압축하고, "이건 stub이다"라는 설명·`skills get`
@@ -55,15 +55,17 @@ stub 자신이 `--full`로 폴백하라고 적어 두었으므로, 앱이 상류
 | `test-driven-development` | `obra/superpowers` | `b36e0829c6d0` | MIT (Jesse Vincent) |
 | `systematic-debugging` | `obra/superpowers` | `b36e0829c6d0` | MIT (Jesse Vincent) |
 | `verification-before-completion` | `obra/superpowers` | `b36e0829c6d0` | MIT (Jesse Vincent) |
-| `ponytail` 외 5종 | `DietrichGebert/ponytail` | `356918eba965` | MIT (Dietrich Gebert) |
+| `ponytail` 외 5종 | `DietrichGebert/ponytail` | `e3ba2aa6f1e6` | MIT (Dietrich Gebert) |
 
-ponytail의 커밋은 `2ed6c52c9d7e`에서 `356918eba965`로 올렸지만 **파일은 하나도 바뀌지
-않았다.** 그 사이 상류가 건드린 것은 README 로고 파일 이름뿐이고, `skills/` 6종과
-`LICENSE`는 바이트 단위로 같다. 커밋만 올린 것은 어느 시점까지 대조했는지를 남기기
-위해서다.
+ponytail의 커밋은 `356918eba965`에서 `e3ba2aa6f1e6`(v4.10.0)으로 올렸지만 **파일은
+하나도 바뀌지 않았다.** 그 사이 상류가 건드린 것은 Cursor용 네이티브 훅(`hooks/`,
+`scripts/cursor-hooks.js`, `docs/cursor-hooks.md`)과 플러그인 매니페스트 버전·README뿐이고,
+`skills/` 6종과 `LICENSE`는 바이트 단위로 같다. 훅은 이 브랜치가 담지 않는 경로다. 그 전
+갱신(`2ed6c52c9d7e` → `356918eba965`)도 README 로고 파일 이름뿐이었다. 커밋만 올린 것은
+어느 시점까지 대조했는지를 남기기 위해서다.
 
-이 표의 세 상류는 **2026-09-14 재확인 시점에도 커밋이 그대로다.** 세 저장소 HEAD가 위에
-적힌 커밋이고, 그래서 이번 갱신에서도 Orca 번들 쪽 커밋만 올렸다.
+나머지 두 상류(`multica-ai`, `obra/superpowers`)는 **2026-09-15 재확인 시점에도 커밋이
+그대로다.** 두 저장소 HEAD가 위에 적힌 커밋이다.
 
 `orca_skill`은 이 4종에 `Orca dispatch 컨텍스트` 절과 출처절을 덧붙여 쓴다. 무엇이
 덧붙었는지는 이 브랜치와 diff를 뜨면 그대로 나온다.
