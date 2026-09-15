@@ -150,8 +150,8 @@ orca orchestration ask --question "날짜 선택 UI는 <input type=\"date\">로 
 
 Orca 사내 배포판이 번들한 서드파티 스킬이다. **본문은 원문 그대로이고 위 `Orca dispatch 컨텍스트` 절과 이 절만 추가했다.**
 
-- 출처: `DietrichGebert/ponytail` · `skills/ponytail/SKILL.md` (커밋 `2ed6c52c9d7e`)
+- 출처: `DietrichGebert/ponytail` · `skills/ponytail/SKILL.md` (커밋 `e3ba2aa6f1e6`, v4.10.0). 본문은 처음 가져온 `2ed6c52c9d7e`부터 이 커밋까지 바이트 단위로 같다 — 커밋 표기만 대조 시점(2026-09-15)에 맞춰 올렸다.
 - 라이선스: MIT (frontmatter의 `license` 필드 / 이 디렉터리의 `LICENSE`는 상류 저장소 루트의 전문)
 - 원문 수정: 없음. frontmatter의 `argument-hint`도 그대로 뒀다 - opencode와 Claude Code 모두 모르는 키를 무시한다.
-- **상류의 훅·플러그인은 가져오지 않았다.** ponytail은 `hooks/`(Claude Code·Codex)와 `.opencode/plugins/`로 매 턴 규칙 전문(~1,300 토큰)을 시스템 프롬프트에 주입하는 경로도 제공한다. 이 배포판은 `SKILL.md`만 쓰고, 실제로 워커에 거는 것은 orchestration의 QUALITY CONTRACT 1-2번이다. 훅 경로를 쓰지 않는 이유는 둘이다 - 워커 호스트마다 `opencode.json`이나 플러그인 설치가 필요해 디스패치마다 성립을 보장할 수 없고, Claude Code용 `SessionStart` 훅이 statusline이 없으면 세션에 "STATUSLINE SETUP NEEDED ... Proactively offer to set this up for the user"를 주입해 무인 워커가 태스크 대신 그것을 하러 간다.
+- **상류의 훅·플러그인은 가져오지 않았다.** ponytail은 `hooks/`(Claude Code·Codex, v4.10.0부터 Cursor도)와 `.opencode/plugins/`로 매 턴 규칙 전문(~1,300 토큰)을 시스템 프롬프트에 주입하는 경로도 제공한다. 이 배포판은 `SKILL.md`만 쓰고, 실제로 워커에 거는 것은 orchestration의 QUALITY CONTRACT 1-2번이다. 훅 경로를 쓰지 않는 이유는 둘이다 - 워커 호스트마다 `opencode.json`이나 플러그인 설치가 필요해 디스패치마다 성립을 보장할 수 없고, Claude Code용 `SessionStart` 훅이 statusline이 없으면 세션에 "STATUSLINE SETUP NEEDED ... Proactively offer to set this up for the user"를 주입해 무인 워커가 태스크 대신 그것을 하러 간다.
 - 네트워크: 이 파일은 URL을 조회하지 않고 명령을 실행하지 않는다. 순수 행동 지침이다. 상류 저장소 배포본(npm tarball)도 `fetch`/`http`/`child_process`를 쓰지 않고 의존성과 `postinstall`이 없다는 것을 확인했다(2026-09-02).

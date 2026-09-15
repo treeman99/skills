@@ -172,7 +172,7 @@ task id를 우선하는 이유는 코디네이터와 `worker_done` 페이로드�
 
 `orca skills get orchestration`이 서비스하는 가이드에는 이 규약이 없다. 사내 Orca 가이드에
 같은 취지의 절(`f1c3963d`)이 v1.4.198-samsungds까지 있었지만 상류 v1.4.199 머지에서
-빠졌고, v1.4.200-samsungds와 상류 v1.4.201에도 없다(2026-09-14 확인). 그래서 지금은 이
+빠졌고, v1.4.201-samsungds와 상류 v1.4.203에도 없다(2026-09-15 확인). 그래서 지금은 이
 번들이 유일하게 실제로 걸리는 경로다. 서비스 가이드가 이 규약을 다시 담으면 이 절은 지우고
 가이드를 따른다.
 
@@ -495,10 +495,10 @@ Copilot CLI는 넘는 스킬을 **경고 없이 버린다**. 이 번들은 `~/.c
 
 | 스킬 | 상류 | 커밋 | 라이선스 |
 |---|---|---|---|
-| `orchestration` | `stablyai/orca` | `37631030` | 상류 저장소 라이선스 |
-| `orca-cli` | `stablyai/orca` | `37631030` | 상류 저장소 라이선스 |
+| `orchestration` | `stablyai/orca` | `775a9326` | 상류 저장소 라이선스 |
+| `orca-cli` | `stablyai/orca` | `775a9326` | 상류 저장소 라이선스 |
 | `karpathy-guidelines` | `multica-ai/andrej-karpathy-skills` | `2c606141936f` | MIT |
-| `ponytail` | `DietrichGebert/ponytail` | `356918eba965` | MIT (Dietrich Gebert) |
+| `ponytail` | `DietrichGebert/ponytail` | `e3ba2aa6f1e6` | MIT (Dietrich Gebert) |
 | `test-driven-development` | `obra/superpowers` | `b36e0829c6d0` | MIT (Jesse Vincent) |
 | `systematic-debugging` | `obra/superpowers` | `b36e0829c6d0` | MIT (Jesse Vincent) |
 | `verification-before-completion` | `obra/superpowers` | `b36e0829c6d0` | MIT (Jesse Vincent) |
