@@ -18,7 +18,7 @@ Orca orchestration과 충돌하는 스킬이 있어 판정 근거를 함께 적�
 ```
 skills/
   orchestration/                  stablyai/orca 원문 + 품질 스킬 라우팅 (커스터마이징)
-  orca-cli/                       stablyai/orca 원문
+  orca-cli/                       stablyai/orca 원문 (description에서 스킬 공유 문구만 뺌)
   karpathy-guidelines/            범위 통제, 가정 명시, 검증 가능한 성공 기준
   ponytail/                       해법의 크기를 정하는 사다리 (YAGNI → 재사용 → 최소 구현)
   test-driven-development/        구현 전 실패 테스트
@@ -475,9 +475,15 @@ Orca Settings의 스킬 설치·업데이트 버튼도 같은 `npx skills ...` �
 Copilot CLI는 넘는 스킬을 **경고 없이 버린다**. opencode 1.18.26은 넘어도 그대로 로드했다
 (1038자이던 시절에 확인함). 이 번들은 `~/.claude/skills`처럼 다른 에이전트와 공유하는
 경로에 들어가므로, 상류를 반영할 때 description 길이를 함께 본다. 현재(`0d23ea6e`)는
-`orchestration` 524자, `orca-cli` 618자다(YAML 접힘 뒤 기준). 한때 1038자·1015자였지만
-상류 `bba68b1b`가 압축했고, `12d744f2`가 Computer Use·Playwright 라우팅 문장을 빼면서 더
-줄었다.
+`orchestration` 524자, `orca-cli` 587자다(YAML 접힘 뒤 기준, `orca-cli`는 아래 수정 반영
+후). 한때 1038자·1015자였지만 상류 `bba68b1b`가 압축했고, `12d744f2`가 Computer
+Use·Playwright 라우팅 문장을 빼면서 더 줄었다.
+
+**`orca-cli` description에서는 스킬 공유 문구를 뺀다.** 사내 빌드는 스킬 공유(설정의
+Share Skills 페인, `orca skills share` 명령)를 제거했으므로, 상류 description의
+`skill sharing`과 `"share skills"`는 없는 기능을 광고한다. 이 두 문구만 빼고 나머지는
+상류를 따른다. 상류를 머지한 뒤에는 두 문구가 되살아나지 않았는지 본다. 근거와 확인
+명령은 `orca-cli`의 출처절에 있다.
 
 ## Windows 주의사항
 

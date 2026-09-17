@@ -19,7 +19,10 @@
 
 1. `main` 브랜치에 스킬들의 최신 버전 내용을 적용 후 깃에 푸시한다(원본 그대로)
 2. `orca_skill` 브랜치에 `main`에 적용된 스킬 내용을 머지한다
-3. 기존에 `orca_skill` 브랜치에 작업되었던 내용에 변화가 없는지 체크한다
+3. 기존에 `orca_skill` 브랜치에 작업되었던 내용에 변화가 없는지 체크한다. `orca-cli`
+   description에 스킬 공유 문구가 되살아나지 않았는지도 본다(아래 규약) —
+   `awk '/^---$/{n++; next} n==1' skills/orca-cli/SKILL.md | grep -ciE 'skill sharing|share skills'`가
+   0이어야 한다. 출처절에도 두 문구가 있으므로 파일 전체를 grep하면 안 된다
 4. 새로 추가된 내용이 외부 URL 접근을 필요로 하는지 체크한다
 
 ## 배포 대상
@@ -48,7 +51,12 @@
   지우고 상류를 따른다
 - `skills/orchestration/SKILL.md` 본문은 영어, QUALITY CONTRACT 블록과 출처절은 한국어
 - frontmatter `description`은 손대지 않는다 — Orca가 이 필드로 스킬을 라우팅한다
-  (Agent Skills 상한 1024자)
+  (Agent Skills 상한 1024자). **예외는 하나다:** `orca-cli` description에서 `skill sharing`과
+  `"share skills"`를 뺀다. 사용자가 의도한 수정이다. 사내 빌드는 스킬 공유를 제거했으므로
+  (포크 `eb3d9545a6`, v1.4.188-samsungds부터 Share Skills 페인과 `orca skills share`가
+  없다) 이 두 문구는 없는 기능을 광고한다. 범위는 이 두 문구뿐이고 나머지 description은
+  상류를 따른다. 포크 stub이 더한 다른 트리거 문구는 가져오지 않는다. 상류 머지로 두 문구가
+  되살아나면 다시 뺀다. 근거와 삭제 조건은 `orca-cli` 출처절에 있다
 - QUALITY CONTRACT 번호(1-1, 1-2, 2~6)는 `README.md`와 `docs/how-it-works.md`가 참조한다.
   뒤 번호를 밀지 말 것
 - `SKILL.md`의 디스패치 흐름을 바꾸면 `README.md`와 `docs/how-it-works.md`의 mermaid
@@ -56,5 +64,5 @@
 
 ## 하지 말 것
 
-- `orca skills update|install --skill orchestration` — 커스터마이징을 업스트림 원문으로
+- `orca skills update|install --skill orchestration`(`orca-cli`도 같다) — 커스터마이징을
   덮는다. Orca Settings의 스킬 설치·업데이트 버튼도 같은 경로로 귀결된다
