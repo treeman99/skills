@@ -322,11 +322,11 @@ TEST_CMD='pnpm vitest run' bash <skills-dir>/systematic-debugging/find-polluter.
 
 Orca 사내 배포판이 번들한 서드파티 스킬이다. **본문은 원문 그대로이고 위 `Orca dispatch 컨텍스트` 절과 이 절만 추가했다.**
 
-- 출처: `obra/superpowers` · `skills/systematic-debugging/` (커밋 `b36e0829c6d0`)
+- 출처: `obra/superpowers` · `skills/systematic-debugging/` (커밋 `5bf4e78011`, v6.4.1)
 - 저작권: Copyright (c) 2025 Jesse Vincent · 라이선스: MIT (이 디렉터리의 `LICENSE`)
 - 함께 설치되는 참조 문서: `root-cause-tracing.md`, `defense-in-depth.md`, `condition-based-waiting.md`, `condition-based-waiting-example.ts`, `find-polluter.sh`
 - 수정 1건: 본문의 스킬 참조에서 `superpowers:` 접두어를 뗐다(`superpowers:test-driven-development` → `test-driven-development`). 이 배포판은 그 네임스페이스로 설치되지 않기 때문이다.
-- 수정 2건: `find-polluter.sh`의 실행 비트를 뗐고 호출 표기를 `bash ...`, 절대 경로로 바꿨다. `root-cause-tracing.md`의 참조도 맞췄다.
+- 수정 2건: `find-polluter.sh`의 실행 비트를 뗐고 호출 표기를 `bash ...`, 절대 경로로 바꿨다. `root-cause-tracing.md`의 참조도 맞췄다. **상류도 v6.4.1에서 같은 방향으로 한 걸음 왔다** — `root-cause-tracing.md`의 호출이 `./find-polluter.sh`에서 `bash ./find-polluter.sh`로 바뀌었다(2026-09-21 머지에서 충돌, 이 사본 유지). 상류가 고친 것은 실행 비트 없이도 돌게 하는 `bash` 접두뿐이고, 저장소 루트 실행·절대 경로·`TEST_CMD`·Windows bash 요구는 여전히 상류에 없다. 삭제 조건: 상류가 절대 경로 호출과 `TEST_CMD`까지 문서화하면 이 수정을 지우고 상류를 따른다.
 - 수정 3건: `find-polluter.sh`에 `TEST_CMD` 환경변수와 조기 중단 두 가지를 넣었다. 원문은 `npm test`를 하드코딩하고 실패를 `|| true`로 삼키기 때문에, npm 저장소가 아니거나 패턴이 하나도 매칭되지 않으면 아무것도 검사하지 않고 "No polluter found"라는 **거짓 성공**을 냈다. 이분 탐색 로직 자체는 그대로다.
 - 제외 5건: 원저자의 평가용 픽스처(`test-pressure-1~3.md`, `test-academic.md`)와 `CREATION-LOG.md`. 스킬 동작에 참조되지 않는다.
 - 네트워크: URL을 조회하지 않는다. `find-polluter.sh`는 `find`와 저장소의 테스트 명령만 실행한다.

@@ -182,6 +182,16 @@ Confirm:
 
 **Other tests fail?** Fix now.
 
+**"Other tests" means the project's suite, not just your file.** A
+green run of the test you wrote is not a green suite. Before you call
+the change done, run the project's test command (bare `pytest`,
+`npm test`, `cargo test` — whatever the repo uses) even when your task
+named only one test file. A scope statement in your task bounds the
+deliverable, not your verification. Any failure that run shows —
+including one you didn't cause — goes in your report by name; a red
+test you watched scroll past and didn't mention is a report falsified
+by omission.
+
 ### REFACTOR - Clean Up
 
 After green only:
@@ -348,7 +358,8 @@ orca orchestration ask --question "설정 파일만 바꾸는 태스크라 TDD �
 
 Orca 사내 배포판이 번들한 서드파티 스킬이다. **본문은 원문 그대로이고 위 `Orca dispatch 컨텍스트` 절과 이 절만 추가했다.**
 
-- 출처: `obra/superpowers` · `skills/test-driven-development/` (커밋 `b36e0829c6d0`)
+- 출처: `obra/superpowers` · `skills/test-driven-development/` (커밋 `5bf4e78011`, v6.4.1)
+- 상류 갱신(2026-09-21, v6.4.1): `b36e0829c6d0` → `5bf4e78011`에서 GREEN 단계의 "Other tests fail? Fix now." 뒤에 문단이 하나 붙었다 — "other tests"는 방금 쓴 테스트 파일이 아니라 **프로젝트 전체 스위트**를 뜻하고, 태스크가 파일 하나만 지목했더라도 프로젝트 테스트 명령을 돌리며, 자기가 내지 않은 실패까지 이름을 적어 보고하라는 내용이다. 이 배포판의 QUALITY CONTRACT 4번·6번과 같은 방향이라 규약은 그대로 두고 상류 문단을 그대로 받았다. 아래 `Orca dispatch 컨텍스트` 절의 Red-Green 증거 요구와도 겹치지 않는다.
 - 함께 설치되는 참조 문서: `writing-good-tests.md`
 - 저작권: Copyright (c) 2025 Jesse Vincent · 라이선스: MIT (이 디렉터리의 `LICENSE`)
 - 수정 1건: `writing-good-tests.md`에서 번들 대상이 아닌 `superpowers:writing-skills` 참조를 괄호째 제거했다. 문장 의미는 그대로다.
