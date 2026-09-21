@@ -14,23 +14,32 @@
 
 ## 무엇이 들어 있나
 
-### Orca 번들 스킬 — `stablyai/orca` `0d23ea6e` (2026-09-17)
+### Orca 번들 스킬 — `stablyai/orca` `76d87604` (2026-09-20)
 
 Orca가 `orca skills install`로 설치하는 스킬 전부다. 8종이고, 이름은 설치된 Orca의
 `orca skills list --json`이 내놓는 목록과 맞춰 확인한다.
 
-커밋은 `78609330`에서 `0d23ea6e`로 올렸고, **이번에는 stub 3종의 frontmatter
-`description`이 바뀌었다.** 상류 `12d744f2`(#21069)가 "폴더 만들기" 같은 파일·셸 작업이
-`computer-use`로 라우팅되던 문제를 고치면서, `computer-use`는 "프로그램 경로(셸,
-파일시스템, git, HTTP, CLI)로 안 될 때만 쓴다"로 좁혔고, `orca-cli`는 Playwright·CDP
-안내를 뺐고, `orchestration`은 Computer Use·Playwright·내장 브라우저 라우팅 문장을
-통째로 뺐다. 세 파일 모두 본문은 그대로다. 나머지 5종은 `78609330`과 바이트 단위로 같다.
+커밋은 `0d23ea6e`에서 `76d87604`로 올렸지만 **stub 8종은 바이트 단위로 같다.** 그 사이
+297커밋 중 상류 `skills/`를 건드린 것은 0건이다.
 
-이 변경은 v1.4.205 릴리스(태그 `11aba8bd`, 릴리스 브랜치라 main 조상은 아니다) **이후에**
-main에 들어갔다. v1.4.205 태그의 stub 8종과 `skill-guides/`는 `78609330`과 같으므로,
-v1.4.205 앱이 설치하는 stub과 `skills get`이 서비스하는 가이드에는 아직 옛 description이
-있다. 그 전 네 갱신(`bba68b1b` → `aac38d69` → `37631030` → `775a9326` → `78609330`,
+**대신 지난번 적어 둔 description 변경이 이번 릴리스에 담겼다.** `12d744f2`(#21069)는
+v1.4.205 태그 이후 main에 들어갔는데, v1.4.206 태그(`c62eca39`, 2026-09-20)의
+`computer-use`·`orca-cli`·`orchestration` stub은 `0d23ea6e`와 트리 해시가 같다 — 즉
+**v1.4.206 앱부터 새 description을 설치한다.** 릴리스 태그는 릴리스 브랜치라 main 조상이
+아니므로 `merge-base --is-ancestor`로는 판정할 수 없다(`12d744f2`도 "조상 아님"으로
+나온다). 릴리스에 담겼는지는 트리 해시를 대조해 확인한다.
+
+```bash
+git rev-parse v1.4.206:skills/orchestration   # 0d23ea6e:skills/orchestration 과 같아야 한다
+```
+
+그 전 네 갱신(`bba68b1b` → `aac38d69` → `37631030` → `775a9326` → `78609330`,
 v1.4.200~v1.4.204)은 stub이 그대로였다.
+
+가이드(`skill-guides/`, 이 브랜치가 담지 않는다)는 이번에 한 번 바뀌었다 —
+`3336933cc8`(#21523)이 `worker-list`를 newest-first로 뒤집고 100행에서 잘릴 때
+`warnings`를 붙였다. 이것도 v1.4.206에 담겼다(`skill-guides/orchestration.md`의
+v1.4.206 트리 해시가 상류 main과 같다).
 
 **본문은 설치된 앱보다 상류 쪽이 앞서 있을 수 있다.** 위 description 변경이 그 예다.
 본문의 마지막 내용 변경은 `bba68b1b`였다 — 8종의 description을 압축하고, "이건
@@ -59,9 +68,9 @@ references/<file>.md`, `--references`, `--full`)이 새로 들어갔다. 이 플
 | 스킬 | 상류 | 커밋 | 라이선스 |
 |---|---|---|---|
 | `karpathy-guidelines` | `multica-ai/andrej-karpathy-skills` | `2c606141936f` | MIT |
-| `test-driven-development` | `obra/superpowers` | `b36e0829c6d0` | MIT (Jesse Vincent) |
-| `systematic-debugging` | `obra/superpowers` | `b36e0829c6d0` | MIT (Jesse Vincent) |
-| `verification-before-completion` | `obra/superpowers` | `b36e0829c6d0` | MIT (Jesse Vincent) |
+| `test-driven-development` | `obra/superpowers` | `5bf4e78011` | MIT (Jesse Vincent) |
+| `systematic-debugging` | `obra/superpowers` | `5bf4e78011` | MIT (Jesse Vincent) |
+| `verification-before-completion` | `obra/superpowers` | `5bf4e78011` | MIT (Jesse Vincent) |
 | `ponytail` 외 5종 | `DietrichGebert/ponytail` | `e3ba2aa6f1e6` | MIT (Dietrich Gebert) |
 
 ponytail의 커밋은 `356918eba965`에서 `e3ba2aa6f1e6`(v4.10.0)으로 올렸지만 **파일은
@@ -71,8 +80,23 @@ ponytail의 커밋은 `356918eba965`에서 `e3ba2aa6f1e6`(v4.10.0)으로 올렸�
 갱신(`2ed6c52c9d7e` → `356918eba965`)도 README 로고 파일 이름뿐이었다. 커밋만 올린 것은
 어느 시점까지 대조했는지를 남기기 위해서다.
 
-나머지 세 상류(`DietrichGebert/ponytail`, `multica-ai`, `obra/superpowers`)는
-**2026-09-17 재확인 시점에도 커밋이 그대로다.** 세 저장소 HEAD가 위에 적힌 커밋이다.
+superpowers의 커밋은 `b36e0829c6d0`에서 `5bf4e78011`(v6.4.1)로 올렸고, **담는 3종 중
+2종의 파일이 바뀌었다.**
+
+- `test-driven-development/SKILL.md` — GREEN 단계 "Other tests fail? Fix now." 뒤에
+  문단이 하나 붙었다. "other tests"는 방금 쓴 테스트 파일이 아니라 **프로젝트 전체
+  스위트**를 뜻하고, 태스크가 파일 하나만 지목했더라도 프로젝트 테스트 명령(`pytest`,
+  `npm test`, `cargo test`)을 돌리며, 자기가 내지 않은 실패까지 이름을 적어 보고하라는
+  내용이다. 태스크의 범위 서술은 산출물을 한정할 뿐 검증을 한정하지 않는다고 못박는다.
+- `systematic-debugging/root-cause-tracing.md` — `./find-polluter.sh` 호출이
+  `bash ./find-polluter.sh`로 바뀌었다. 실행 비트가 없어도 돌게 하는 한 줄 수정이다.
+- `verification-before-completion`은 바이트 단위로 같다.
+
+v6.4.1이 더한 새 스킬(`diagnosing-superpowers` 등)은 이 배포판이 담는 3종 밖이라
+가져오지 않는다.
+
+`DietrichGebert/ponytail`(`e3ba2aa6f1e6`)과 `multica-ai`(`2c606141936f`)는
+**2026-09-21 재확인 시점에도 커밋이 그대로다.** 두 저장소 HEAD가 위에 적힌 커밋이다.
 
 `orca_skill`은 이 4종에 `Orca dispatch 컨텍스트` 절과 출처절을 덧붙여 쓴다. 무엇이
 덧붙었는지는 이 브랜치와 diff를 뜨면 그대로 나온다.
