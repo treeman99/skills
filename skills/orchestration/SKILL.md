@@ -85,6 +85,7 @@ folder invented for the purpose.
 | Dispatched worker with a `taskId` | `.orca/artifacts/<task_id>/` |
 | No `taskId` — working directly, or a full handoff | `.orca/artifacts/<short-slug>/` |
 | Coordinator writing an opencode worker's spec file, before `task-create` has run | `.orca/artifacts/<short-slug>/dispatch-spec.md` |
+| Coordinator recording to the Project Rule Ledger | `.claude/harness/` — not a working file, see below |
 
 The task id is preferred because it is the one identifier the coordinator, the `worker_done`
 payload, and `dispatch-show` already share, so a stray file always traces back to the task
@@ -94,6 +95,11 @@ folder, names are free.
 - **Deliverables are exempt.** Source, tests, and documentation that were actually asked for
   belong where the project keeps them. This rule covers only the scaffolding produced in
   order to do the job.
+- **`.claude/harness/` is not a working file.** It holds the Project Rule Ledger (next
+  section): durable project knowledge that the next run reads back, not scaffolding for this
+  one. Its files stay exactly where that protocol puts them. Never write a ledger entry — a
+  recorded correction, a candidate, a promoted rule — under `.orca/artifacts/` instead. No
+  later run looks there, so the entry is lost and the ledger stops learning without any sign.
 - **`--report-path` points inside it** when there is a dispatch:
   `--report-path .orca/artifacts/<task_id>/report.md`. Letting the coordinator open the long
   form without searching for it is the reason that flag exists.
@@ -110,6 +116,50 @@ to stop.
 The served guide does not carry this rule. Nothing in `ORCA skills get orchestration` says
 where to put a plan file; `--report-path` appears there as an optional flag with no
 convention attached. Drop this section if a future guide specifies one, and follow the guide.
+
+## Project Rule Ledger: starting one where none exists
+
+The guide served by the company build carries a `Project Rule Ledger` section. It is the
+feedback loop of this distribution: a user's correction becomes a rule that later workers
+receive. The coordinator reads `.claude/harness/rules.md` before the first dispatch, injects
+the matching rule blocks into each `--spec` under `[PROJECT RULES]`, records corrections in
+`.claude/harness/candidates.md`, and settles candidates with the user. **That protocol belongs
+to the guide; follow it there.** This section covers only the one case the guide leaves open —
+a project that has no `.claude/harness/` yet.
+
+Where the directory is absent, the guide says the protocol is inert and the directory must
+never be created unprompted. Taken alone, that means the loop never starts in a new project:
+the user corrects a worker, nothing is recorded, and the next run repeats the mistake with no
+sign that anything was skipped. So ask instead of staying silent:
+
+- **Ask at the moment the ledger would first have something to record** — the user corrects
+  an accepted `worker_done`, or supplies a project-specific requirement mid-run — while
+  `.claude/harness/` does not exist. One question, along the lines of: "This project has no
+  rule ledger, so this correction will not reach later workers. Create `.claude/harness/` and
+  record it?" Do not ask at the start of a run; a run with no correction has nothing to
+  record. Ask at most once per coordinator session. After a no, keep applying the correction
+  to the current work and record it nowhere else.
+- **Create it without asking only when the user asks for it** — "turn on the feedback loop",
+  "set up the rule ledger", or the like.
+- **On a yes, copy the templates; do not write your own.** `rules.md`, `candidates.md`, and
+  `retired.md` sit in `harness-template/` beside this SKILL.md, in this skill's base
+  directory. Copy them unchanged into `.claude/harness/` at the root of the checkout or folder
+  the coordinator runs in — not a worker's worktree. Then record the triggering correction as
+  the first entry of `candidates.md`, in the format that file shows, and tell the user. If
+  `harness-template/` is missing, the bundle was installed without it: say so and ask for a
+  reinstall rather than inventing a format that later promotions have to read.
+- **The ledger is meant to be committed, and the commit is the user's.** In a Git checkout,
+  run `git check-ignore -q .claude/harness/rules.md`. Exit 0 means the project ignores it, so
+  other clones and teammates will never receive the rules — tell the user. Do not edit the
+  ignore file, and do not commit on your own.
+- **If the served guide has no `Project Rule Ledger` section, do none of this.** A public
+  Orca build does not carry the protocol, and this section is not a substitute for it: a
+  ledger nobody reads is worse than none.
+
+This does not bend the guide. "Unprompted" is the whole prohibition, and a question the user
+answers is a prompt. Drop this section and `harness-template/` when the served guide itself
+gives a project without a ledger a way to start one, or when the guide stops carrying the
+Project Rule Ledger.
 
 ## Bundled quality skills
 
@@ -147,7 +197,10 @@ spec and expecting it to load drops the gate with no signal that it happened.
 **Inline the contract into the spec.** Append this verbatim after the task body in
 `task-create --spec`, keeping the wording — workers key off this shape. For an opencode
 worker the task body and this block go into the spec file instead, and `--spec` carries only
-the pointer to it — see the opencode section below; the block itself does not change:
+the pointer to it — see the opencode section below; the block itself does not change. When the
+guide's Project Rule Ledger selects rule blocks for the task, its `[PROJECT RULES]` section
+goes between the task body and this block, so the contract is always the last thing in the
+spec:
 
 ```text
 --- QUALITY CONTRACT (Orca dispatch 전용) ---
@@ -306,12 +359,12 @@ worker out of `terminal create` or `worktree create --agent opencode` plus `term
 A terminal created that way is an ordinary terminal — no anchor, no supervision — and the
 renderer just appends a tab to the active group.
 
-What differs for opencode is the shape of the spec. **The task body and the QUALITY CONTRACT
-do not go into `--spec`.** Write them to a file in the worker's worktree first, and give
-`--spec` only a pointer to that file. Four steps, in this order:
+What differs for opencode is the shape of the spec. **The task body, any `[PROJECT RULES]`,
+and the QUALITY CONTRACT do not go into `--spec`.** Write them to a file in the worker's
+worktree first, and give `--spec` only a pointer to that file. Four steps, in this order:
 
 ```text
-<write the task body + QUALITY CONTRACT verbatim to <worktree>/.orca/artifacts/<short-slug>/dispatch-spec.md>
+<write the task body + [PROJECT RULES] if any + QUALITY CONTRACT verbatim to <worktree>/.orca/artifacts/<short-slug>/dispatch-spec.md>
 ORCA orchestration task-create --task-title "<short title>" --spec "Read <abs path to that file> in full and follow it exactly. It is your task spec, QUALITY CONTRACT included." --json
 ORCA orchestration worker-start --task <task_id> --worktree current --agent opencode --json
 ORCA orchestration worker-read --dispatch <dispatch_id> --limit 50 --json
@@ -338,9 +391,13 @@ Four things the file step has to get right:
 - **The pointer is one line.** No newlines, no blank lines, no second sentence on its own line.
   Pass `--task-title` too: without it Orca derives the title from the first line of `--spec`,
   which is now the pointer, and every opencode task in `task-list` starts with `Read /...`.
-- **The file holds the full spec verbatim.** Task body, then the QUALITY CONTRACT with item 2
+- **The file holds the full spec verbatim.** Task body, then the `[PROJECT RULES]` section when
+  the Project Rule Ledger selected blocks for this task, then the QUALITY CONTRACT with item 2
   already substituted. A file that was trimmed, reflowed, or summarized starts the worker on
   half a spec, and `task-list --json | grep -c '<<'` cannot see into it — check the file.
+  For an opencode worker, the ledger's "append them to `--spec`" means this file: appended
+  after the pointer, the rules turn it back into a multi-line typed prompt, and left out,
+  they never reach the worker.
 - **Write the file before `task-create` or `worker-start`**, not after. The pointer is useless
   to a worker that reads it before the file exists, and opencode reports a missing file rather
   than waiting.
@@ -454,7 +511,7 @@ working in. Scope sweeps to the Run you are coordinating instead of reading the 
 
 ## 출처와 커스터마이징 기록
 
-Orca 사내 배포판이 번들한 스킬이다. **업스트림 원문에 `Working files` 절, `Bundled quality skills` 절, `opencode workers go through worker-start, with the spec as a file pointer` 절, `Coordinator field notes` 절, 그리고 이 절만 추가했고, 나머지 본문과 frontmatter는 손대지 않았다.**
+Orca 사내 배포판이 번들한 스킬이다. **업스트림 원문에 `Working files` 절, `Project Rule Ledger: starting one where none exists` 절, `Bundled quality skills` 절, `opencode workers go through worker-start, with the spec as a file pointer` 절, `Coordinator field notes` 절, 그리고 이 절만 추가했고, 나머지 본문과 frontmatter는 손대지 않았다.** 파일로는 `harness-template/`의 3개(`rules.md`·`candidates.md`·`retired.md`)를 더했다.
 
 - 출처: `stablyai/orca` · `skills/orchestration/SKILL.md` (커밋 `76d87604`, 2026-09-20). 본문의 마지막 내용 변경은 `bba68b1b`다. frontmatter `description`은 `12d744f2`(#21069)에서 바뀌었고, 이 스킬은 상류 값을 그대로 받았다(아래 2026-09-17 항목).
 - 상류 갱신(2026-09-08): `bba68b1b`가 stub 8종을 전부 줄였다. 이 스킬에서는 description이 압축되고, `Load the full guide` 절이 `Load the version-matched guide`로 바뀌면서 구버전 바이너리용 부트스트랩 절(`If an older Orca does not recognize skills get`)이 그 절 끝 한 문단으로 흡수됐다. 참조 문서 분할 로딩(`skills get orchestration --reference references/<file>.md`, `--references`)도 새로 들어갔는데, **설치된 1.4.198은 아직 이 플래그를 모른다** — `orca skills get orchestration --references`가 `Unknown flag --references ... Valid flags: --environment, --full, --help, --json, --pairing-code, --topic`으로 거절한다(2026-09-08 확인). stub이 그 경우 `--full`로 폴백하라고 적어 두었고, 1.4.198에서는 `--full`과 기본 출력이 449줄로 동일하다. 커스터마이징은 이 변경과 겹치지 않는다.
@@ -471,6 +528,7 @@ Orca 사내 배포판이 번들한 스킬이다. **업스트림 원문에 `Worki
 - 추가 5-1건(2026-09-03, **파일 포인터 기법은 5-2번에서 유지**): 같은 절에서 프리앰블을 `terminal send --text`로 보내지 않고 파일에 쓴 뒤 경로 한 줄만 보내도록 바꿨다. 계기는 긴 프롬프트가 워커에 다 전달되지 않는다는 보고였고, **원인은 Orca가 아니다.** 1.4.195에 프로브 터미널(raw 모드 리더)을 붙여 실측한 결과 터미널 입력은 2 KB~200 KB에서 손실 0이었고, 유일한 상한 `TERMINAL_INPUT_MAX_BYTES`(16 MiB)는 자르는 게 아니라 거부한다. 잘리는 곳은 opencode의 composer다 — 개행이 전부 키 이벤트가 되고, 어느 이음매에서 붙여넣기 추론이 깨지는지는 opencode 빌드·pane 크기·머신 부하에 달려 있어 Orca가 이름 붙일 수 있는 바이트 임계값이 없다. 그래서 크기 분기를 두지 않는다. 이 사실은 포크의 평문 경로(5-2번)에서도 그대로다 — 평문 역시 키 입력이다.
 - 추가 5-2건(2026-09-11): **opencode 워커도 `worker-start`로 띄우고, 스펙만 파일 포인터로 넘기도록 절을 다시 썼다.** 계기는 사내 Windows 빌드 v1.4.199-samsungds에서 "opencode 워커만 패널 자동 분할이 안 되고 조율자 옆에 탭만 추가된다, `orca-diagnostic.log`에 worker 줄이 0개"라는 신고가 3회째 들어온 것이다. 원인은 Orca가 아니라 5번 절의 우회였다. 포크 소스 `/Users/daegun/Workspace/orca`(브랜치 `enterprise/samsungds`, `git describe` = `v1.4.199-samsungds`)에서 확인한 사실: ⓐ 워커 패널 자동 분할 앵커(`paneGroupPlacement`, 리시트의 `paneAnchorTabId`)는 `worker-start`가 워커 터미널을 만들 때만 붙는다 — `src/main/runtime/rpc/methods/orchestration/worker/local-worker-start.ts` → `worker-pane-anchor-terminal.ts`(`worker-pane-main` 로그 줄)와 렌더러 `src/renderer/src/hooks/ipc-events/terminal-presentation-ipc-bridge.ts`(`worker-pane-renderer` 로그 줄). `terminal create`·`worktree create`는 일반 터미널 생성이라 앵커가 없고 활성 그룹에 탭만 추가된다. 완료 탭 자동 닫기(`src/main/runtime/orchestration/settled-worker-terminal-autoclose.ts`)도 `requestWorkerTerminalRelease(dispatchId)`를 타므로 감독 행이 있어야 동작한다. ⓑ 5번의 우회 근거 세 가지는 포크에서 해소됐다. opencode는 bracketed paste 대신 평문으로 쓴다(`src/shared/tui-agent-config.ts`의 `promptDeliveryMode: 'plain-text'`, 커밋 `6cd637684c`). 쓰기 전에 composer 준비 신호를 기다린다(`OrcaRuntimeService.waitForAgentComposerReady`, `worker-dispatch-input.ts`의 `awaitWorkerComposer`, 커밋 `28164e79d2`; `worker-prompt-composer … ready=` 로그 줄). 상태를 읽을 수 없는 pane에서는 stall을 실패로 승격하지 않는다(`src/main/runtime/agent-prompt-submit-evidence.ts`의 `assertAgentPromptRescuedIfStalled`; 리시트에 `submit: 'unverified'` 경고를 남기고 capability는 발급된다 — Windows ConPTY가 opencode의 OSC 제목을 삼켜 정상적으로 나온다). ⓒ 같은 커밋을 업스트림 앱에서 세면 `grep -a -c` 기준 `promptDeliveryMode` 0건, `worker-pane-main` 0건, `waitForAgentComposerReady` 0건이다 — `/Applications/Orca.app`(CFBundleShortVersionString 1.4.199)은 업스트림 빌드라 **포크 동작의 확인 경로로 쓰지 않는다.** 앞으로 Orca 동작 확인은 포크 소스 또는 Windows 설치본의 `resources/app.asar`에서 한다. 파일 포인터는 유지했다 — 평문 경로도 키 입력이라 긴 스펙의 중간 제출 위험은 그대로이고, 포인터로 넘기면 주입 텍스트가 고정 라이프사이클 헤더(`src/main/runtime/orchestration/preamble.ts` 템플릿 리터럴 합계 2,731 B)와 한 줄뿐이라 태스크 길이와 무관하다. 파일 폴더는 task-create 전이라 `<task_id>`가 없으므로 `.orca/artifacts/<short-slug>/dispatch-spec.md`로 두고 Working files 표에 행을 추가했다. 5번 절 끝의 삭제 조건("상류가 opencode에 정착 게이트·관측 가능한 상태·bracketed paste를 주면 지운다")은 포크 빌드 v1.4.194-samsungds 이후에서 앞의 둘이 충족됐고, 셋째는 평문 경로로 대체돼 더 이상 성립하지 않으므로 우회 자체를 지웠다. 남은 커스터마이징(파일 포인터)의 삭제 조건은 절 끝에 새로 적었다. 이 맥에는 opencode가 없고 앱도 업스트림이라 실제 전달 검증은 Windows 포크 빌드에서만 가능하다 — 확인 절차는 README의 opencode 절에 있다.
 - 추가 5-3건(2026-09-11): 5-2번을 배포한 첫 실행(사내 Windows v1.4.199-samsungds)에서 자동 분할된 opencode 워커의 소유권이 타이핑 없이 `user_takeover`로 바뀌고 `worker-read`가 비는 문제가 났다. 스킬이 원인이 아니라 스킬이 처음으로 opencode를 `worker-start`(감독 행 있음) 경로에 태우면서 드러난 포크 렌더러 버그다 — 이전 우회 터미널에는 뒤집힐 행이 없었다. Orca 저장소 세션이 원인을 확정했다: xterm의 `onUserInput`이 키 입력뿐 아니라 마우스 추적 보고(SGR/urxvt/X10)와 alt-screen 휠을 화살표로 합성한 바이트에도 켜지고, 렌더러(`src/renderer/src/components/terminal-pane/pty-connection/direct-ssh-retry-status.ts`)가 그 신호로 `orchestration.workerTerminalUserInput`을 호출해 `markWorkerTerminalUserOwned`가 행을 `user_owned`로 바꾸고 `worker_terminal_archives`를 지운다. 분할로 패널이 보이면 포인터가 닿고, opencode는 마우스 추적을 켜는 TUI라 휠 한 번이 takeover다. 분할 패널은 워커 PTY에 정확히 붙고 프롬프트도 도달함이 확인됐다(`worker-prompt-sent … bytes=5269`). 포크 커밋 `52eeafc5a0`이 `terminal-typed-user-input.ts`로 마우스 보고와 휠 창을 걸러 수정했고, E2E(`orchestration-worker-pane-agent-split.spec.ts`)가 휠 후 `owned`를 단언한다. 이 스킬에는 `worker-show`의 `result.terminalResource.ownershipState` 확인 문단을 opencode 절에 넣었고, README 확인 절차 5번과 how-it-works 실패 모드 행을 추가했다. 삭제 조건: 사내 빌드가 `52eeafc5a0`을 포함해 배포되고 자동 분할 ON에서 소유권이 `owned`로 남는 것이 확인되면 문단의 "Fork builds before …" 문장과 README 5번의 우회 안내, 실패 모드 행을 지운다. `worker-show` 필드 확인 자체는 남긴다.
+- 추가 6건(2026-09-22): `Project Rule Ledger: starting one where none exists` 절과 `harness-template/` 파일 3개, `Working files` 절의 `.claude/harness/` 예외(표 행과 글머리 하나), `Bundled quality skills`와 opencode 절의 `[PROJECT RULES]` 위치. 계기는 "피드백 루프가 전혀 동작하지 않는다"는 신고다. 여기서 피드백 루프는 사내 포크 서비스 가이드의 `Project Rule Ledger` 절을 가리킨다(포크 `36ad413960`·`79d117e2d3`, 2026-08-15). 확인 경로는 포크 체크아웃 `/Users/daegun/Workspace/orca`의 태그 `v1.4.206-samsungds`(= `9d42a86f72`)와 `v1.4.198-samsungds`의 `skill-guides/orchestration.md`, 그리고 포크 README 7절이다. ⓐ 원장 절은 `v1.4.206-samsungds`의 `skill-guides/orchestration.md:177`에 있고, 로드 지점은 `:96`(canonical loop의 "read `.claude/harness/rules.md` when that directory exists")이다. 원장 절 문장은 `v1.4.198-samsungds`와 같아 상류 v1.4.199 머지에서 잃은 것이 없다. 상류 v1.4.206 가이드에는 원장 절이 0건이다. 사내 PC에서 `orca skills get orchestration | findstr /C:"Project Rule Ledger"`가 절 제목 한 줄을 내는 것을 사용자가 확인했다(2026-09-22). ⓑ 루프가 돌지 않은 원인은 `:181`의 "This protocol is inert where that directory is absent … Never create it unprompted"다. 포크는 원장 파일을 포크 저장소 자신에게만 커밋했으므로(`36ad413960`), 다른 프로젝트에서는 루프가 한 번도 시작되지 않는다. 신고한 프로젝트에도 `.claude/harness/`가 없었다(사용자 확인). 그래서 원장이 처음으로 기록할 거리가 생기는 순간에만 한 번 묻고, 승낙하면 템플릿을 복사하게 했다. 가이드가 금지하는 것은 "unprompted"뿐이라 충돌하지 않는다. 템플릿은 포크 `.claude/harness/` 세 파일의 머리말과 형식을 따르고, 포크 전용 표현(`pnpm lint`/`pnpm typecheck`)만 "프로젝트의 lint·typecheck·테스트"로 바꿨다. `candidates.md`의 기록 트리거에는 `79d117e2d3`이 넓힌 "실행 도중 받은 프로젝트 요구"와 "일회성 취향은 규칙이 아니다"를 머리말에 반영했다. `rules.md`에는 포크 파일에 없는 블록 형식 예시를 더했다. 형식 자체는 포크 `R-001`~`R-004` 블록에서 그대로 뽑았다. ⓒ `.claude/harness/` 예외: 포크의 `Work Artifacts` 절(`f1c3963d40`, `v1.4.198-samsungds:skill-guides/orchestration.md:432`)은 "The single exception is `.claude/harness/` … durable project knowledge rather than task scaffolding"를 명시했지만, 상류 v1.4.199 머지(`c0c421d6d9`)에서 절째 빠졌다. 2026-09-14 재확인 ⓓ는 절이 빠진 것만 적었고, 예외 문장이 함께 사라진 것은 놓쳤다. 그 뒤로 이 스킬의 `Working files` 절이 유일한 작업 파일 규칙인데 예외가 없어서, 코디네이터가 `candidates.md` 기록을 노트로 보고 `.orca/artifacts/`로 보낼 여지가 있었다. 실제로 잘못 분류했는지는 사내 실행 기록이 없어 확인하지 못했다. ⓓ `[PROJECT RULES]` 위치: 원장은 규칙을 "`--spec`에 덧붙이라"고 하는데, 이 스킬은 opencode의 `--spec`을 한 줄 포인터로 고정한다. 둘이 만나면 규칙이 빠지거나 포인터가 여러 줄이 되므로 스펙 파일에 넣게 했다. 일반 워커도 순서를 본문 → `[PROJECT RULES]` → QUALITY CONTRACT로 정했다. 규약 블록이 끝에 오는 것은 전과 같다. ⓔ 포크 README 7절이 "공개 upstream 설치본으로 열면 … 원장이 그대로 무시된다"고 적으므로, 이 스킬의 새 절도 서비스 가이드에 원장 절이 없으면 아무것도 하지 않게 했다. 삭제 조건: 서비스 가이드가 원장이 없는 프로젝트의 시작 경로를 직접 주면 새 절과 `harness-template/`를 지운다. 포크 가이드가 작업 파일 규칙을 원장 예외와 함께 다시 실으면 `Working files` 절 전체를 지운다(추가 2건의 삭제 조건과 같다). 가이드에서 원장 절이 빠지면 여기 적은 네 가지를 모두 지운다. 포크가 원장 파일 형식을 바꾸면 `harness-template/`도 같이 고친다.
 - 이 절이 유일한 정본이다. `orca skills get orchestration`이 서비스하는 가이드에는 품질 스킬 라우팅도 작업 파일 위치 규약도 없으므로(1.4.198이 서비스하는 449줄 가이드에 해당 내용 없음, 2026-09-08 확인), 이 스킬 파일만으로 자립 동작하도록 규약 본문을 그대로 담았다. Orca 소스를 수정할 필요가 없다.
 - frontmatter의 `description`은 업스트림 그대로다. Orca가 이 필드로 스킬을 라우팅하므로 바꾸지 않는다.
 - **주의:** 이 스킬은 업스트림과 이름·경로가 같다. `orca skills update --skill orchestration`을 실행하면 위 커스터마이징이 업스트림 원문으로 덮인다. 갱신은 이 저장소에서 내려받는 방식으로만 한다.

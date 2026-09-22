@@ -8,7 +8,8 @@
 
 설치 후 실제로 어떤 동작이 일어나는지는 **[동작 설명서](docs/how-it-works.md)** 에
 흐름도와 함께 정리해 두었다. 워커가 밟는 게이트 순서, 스킬이 워커에 닿는 두 경로,
-교착이 생기는 지점, 실패 모드별 확인 방법을 다룬다.
+교착이 생기는 지점, 사용자의 지적이 다음 워커의 규칙이 되는 피드백 루프, 실패 모드별
+확인 방법을 다룬다.
 
 번들에 더할 스킬을 검토한 결과는 **[추가 도입 후보](docs/skill-candidates.md)** 에 있다.
 Orca orchestration과 충돌하는 스킬이 있어 판정 근거를 함께 적어 두었다.
@@ -18,6 +19,7 @@ Orca orchestration과 충돌하는 스킬이 있어 판정 근거를 함께 적�
 ```
 skills/
   orchestration/                  stablyai/orca 원문 + 품질 스킬 라우팅 (커스터마이징)
+    harness-template/             피드백 루프(규칙 원장)를 새 프로젝트에 만들 때 복사할 빈 파일 3개
   orca-cli/                       stablyai/orca 원문 (description에서 스킬 공유 문구만 뺌)
   karpathy-guidelines/            범위 통제, 가정 명시, 검증 가능한 성공 기준
   ponytail/                       해법의 크기를 정하는 사다리 (YAGNI → 재사용 → 최소 구현)
@@ -57,6 +59,7 @@ junction)로 만든다. opencode도 Claude Code도 링크를 따라간다.
 ```
 %USERPROFILE%\.agents\skills\
   orchestration\SKILL.md
+  orchestration\harness-template\rules.md, candidates.md, retired.md
   orca-cli\SKILL.md
   karpathy-guidelines\SKILL.md
   ponytail\SKILL.md
@@ -103,6 +106,8 @@ orca skills installed | grep -E 'karpathy|ponytail|test-driven|systematic-debug|
 # 2. 설치한 사본 전부에 라우팅이 실렸는가 (사본마다 1 이상이어야 한다)
 grep -c 'QUALITY CONTRACT' ~/.agents/skills/orchestration/SKILL.md \
                            ~/.claude/skills/orchestration/SKILL.md
+#    원장 템플릿도 같이 복사됐는가 (사본마다 3개)
+ls ~/.agents/skills/orchestration/harness-template ~/.claude/skills/orchestration/harness-template
 
 # 3. opencode가 스킬을 보는가 — 이름과 함께 어느 사본을 잡았는지도 나온다
 opencode debug skill > /tmp/oc-skills.json
@@ -120,6 +125,8 @@ Select-String -Pattern 'QUALITY CONTRACT' -Path @(
     "$env:USERPROFILE\.agents\skills\orchestration\SKILL.md",
     "$env:USERPROFILE\.claude\skills\orchestration\SKILL.md"
 )
+Get-ChildItem "$env:USERPROFILE\.agents\skills\orchestration\harness-template",
+              "$env:USERPROFILE\.claude\skills\orchestration\harness-template"
 opencode debug skill > "$env:TEMP\oc-skills.json"
 Select-String -Path "$env:TEMP\oc-skills.json" -Pattern 'orchestration[\\/]SKILL\.md'
 ```
@@ -152,6 +159,7 @@ orca orchestration task-list --json | grep -c '<<'   # 0이어야 한다
 |---|---|
 | `taskId`가 있는 디스패치 워커 | `.orca/artifacts/<task_id>/` |
 | `taskId`가 없는 경우 — 직접 작업, 전면 위임 | `.orca/artifacts/<짧은-이름>/` |
+| 코디네이터가 규칙 원장에 기록할 때 | `.claude/harness/` — 작업 파일이 아니다(아래) |
 
 저장소 루트, `docs/`, 읽고 있던 코드 옆, 그때 새로 만든 최상위 폴더 — 어느 쪽도 아니다.
 task id를 우선하는 이유는 코디네이터와 `worker_done` 페이로드와 `dispatch-show`가 이미
@@ -160,6 +168,10 @@ task id를 우선하는 이유는 코디네이터와 `worker_done` 페이로드�
 
 - **산출물은 예외다.** 실제로 만들라고 한 소스·테스트·문서는 프로젝트가 두는 자리에 둔다.
   이 규칙은 일을 하려고 만든 발판만 대상으로 한다.
+- **`.claude/harness/`도 예외다.** 아래 피드백 루프의 규칙 원장이다. 이번 작업의 발판이
+  아니라 다음 run이 되읽는 프로젝트 지식이라, 기록을 `.orca/artifacts/`로 옮기면 아무도
+  읽지 않아 루프가 조용히 끊긴다. 사내 Orca 가이드의 옛 작업 파일 절(`f1c3963d`)도 이 폴더를
+  유일한 예외로 적어 두었는데, 그 절이 빠지면서 예외도 함께 사라졌었다.
 - **디스패치가 있으면 `--report-path`도 그 안을 가리킨다.** 코디네이터가 파일을 찾아
   헤매지 않고 장문 보고서를 여는 것이 그 플래그의 존재 이유다.
 - **`.orca/`는 이미 Orca의 워크스페이스 네임스페이스다** — `.orca/drops`, `.orca/templates`,
@@ -176,12 +188,70 @@ task id를 우선하는 이유는 코디네이터와 `worker_done` 페이로드�
 그래서 지금은 이 번들이 유일하게 실제로 걸리는 경로다. 서비스 가이드가 이 규약을 다시
 담으면 이 절은 지우고 가이드를 따른다.
 
+## 피드백 루프 — 규칙 원장
+
+워커 결과를 사용자가 지적하면 그 지적이 **다음 워커에게 규칙으로 전달되는** 구조다. 워커는
+매번 새 세션이고 새 워크트리일 때가 많아 코디네이터의 세션 메모리를 볼 수 없으므로, 규칙은
+디스패치 spec에 실려야만 워커에게 닿는다.
+
+**동작 규정은 이 번들이 아니라 사내 Orca 바이너리가 서비스한다.** `orca skills get
+orchestration`이 내는 사내 가이드의 `Project Rule Ledger` 절이 정본이다(포크 `36ad413960`).
+공개 Orca 설치본의 가이드에는 이 절이 없어서 원장 파일이 있어도 아무도 읽지 않는다.
+
+| 파일 | 역할 | 들어가는 조건 |
+|---|---|---|
+| `.claude/harness/rules.md` | 태스크마다 `scope`가 맞는 블록을 최대 5개 골라 spec에 `[PROJECT RULES]`로 주입 | 사용자가 승격을 승인했을 때만. 블록 12개·200줄 상한 |
+| `.claude/harness/candidates.md` | 사용자 지적과 실행 중 추가 요구를 한 건씩 기록. 어떤 컨텍스트에도 안 들어간다 | 자동 기록. 승인 불필요 |
+| `.claude/harness/retired.md` | 내린 규칙과 이유를 보존해 같은 규칙이 되살아나지 않게 한다 | 폐기할 때 |
+
+**원장 폴더가 없는 프로젝트에서는 기본적으로 꺼져 있다.** 가이드가 "폴더가 없으면
+건너뛰고, 요청 없이 만들지 않는다"고 정해 두었기 때문이다. 원장 파일이 커밋된 곳은 Orca
+포크 저장소뿐이라, 그대로 두면 다른 프로젝트에서는 루프가 한 번도 시작되지 않는다. 이
+번들은 그 빈틈만 메운다.
+
+- **처음 지적할 때 한 번 묻는다.** 원장 폴더가 없는 프로젝트에서 사용자가 `worker_done`을
+  지적하거나 실행 도중 프로젝트 요구를 주면, 코디네이터가 "원장이 없어서 이 지적이 다음
+  워커에게 가지 않는다, 만들까?"를 한 번 묻는다. 지적이 없는 run에서는 묻지 않고, 한
+  세션에 한 번만 묻는다.
+- **바로 켜고 싶으면 직접 요청한다.** "이 프로젝트에 피드백 루프 켜줘", "규칙 원장
+  만들어줘"처럼 말하면 묻지 않고 만든다.
+- **만들 때는 `orchestration/harness-template/`의 빈 파일 3개를 그대로 복사한다.**
+  코디네이터가 형식을 즉석에서 지어내지 않게 하려는 것이다. 템플릿이 없으면 설치가
+  덜 된 것이니 코디네이터가 재설치를 요청한다.
+- **원장은 커밋하는 파일이다.** 프로젝트가 `.claude/`를 ignore 하고 있으면 다른 클론과
+  팀원에게는 규칙이 가지 않는다. 코디네이터는 그 사실만 알리고, ignore 파일을 고치거나
+  스스로 커밋하지 않는다.
+
+opencode 워커는 규칙도 스펙 파일에 들어간다. 포인터 한 줄 뒤에 붙이면 여러 줄 입력이 되어
+앞에서 막은 중간 제출 문제가 돌아오고, 빼면 규칙이 가지 않는다. 일반 워커도 순서는 같다 —
+태스크 본문, `[PROJECT RULES]`, QUALITY CONTRACT 순이다.
+
+### 동작하는지 확인하는 법 (사내 PC)
+
+```text
+orca skills get orchestration | findstr /C:"Project Rule Ledger"   ← "## Project Rule Ledger" 한 줄이 정상
+dir <프로젝트>\.claude\harness                                     ← 없으면 루프가 꺼진 상태
+```
+
+켠 뒤에는 결과를 한 번 지적하고 `candidates.md`에 `C-001` 항목이 생기는지 본다. 승격을
+승인한 뒤의 다음 run에서는 워커 spec에 `[PROJECT RULES]`가 실렸는지 본다.
+
+```text
+orca orchestration task-list --json | findstr /C:"PROJECT RULES"
+```
+
+opencode 워커의 태스크는 `task-list`에 포인터 한 줄만 보이므로, 대신
+`.orca\artifacts\<짧은-이름>\dispatch-spec.md`에서 찾는다.
+
+흐름도와 고장 사례는 [동작 설명서](docs/how-it-works.md#피드백-루프-규칙-원장)에 있다.
+
 ## 동작 방식
 
 품질 스킬은 **두 경로로** 워커에 도달한다. 하나가 실패해도 나머지가 동작한다.
 
 **1. spec 인라인 (정본).** 코디네이터가 `task-create --spec`에 QUALITY CONTRACT 블록을
-이어붙인다. 워커 종류와 무관하게 프롬프트로 들어가므로 opencode 워커에도 적용된다.
+이어붙인다. 규칙 원장이 고른 `[PROJECT RULES]`가 있으면 본문과 규약 사이에 들어가고, 규약은
+항상 맨 끝이다. 워커 종류와 무관하게 프롬프트로 들어가므로 opencode 워커에도 적용된다.
 
 **2. 스킬 자동 로드 (보강).** 워커가 스킬 description을 보고 필요한 시점에 스스로 로드한다.
 각 스킬에는 `Orca dispatch 컨텍스트` 절이 있어 이 경로로 로드되어도 워커 환경에 맞게
@@ -197,7 +267,8 @@ task id를 우선하는 이유는 코디네이터와 `worker_done` 페이로드�
 ### opencode 워커도 `worker-start`로 띄우되, 스펙은 파일 포인터로 넘긴다
 
 opencode 워커도 claude·codex 워커와 같이 **`worker-start` 한 번으로 시작한다.** 다른 점은
-스펙의 모양 하나다. 코디네이터가 태스크 본문과 QUALITY CONTRACT를 워커 워크트리의
+스펙의 모양 하나다. 코디네이터가 태스크 본문, 규칙 원장이 고른 `[PROJECT RULES]`,
+QUALITY CONTRACT를 워커 워크트리의
 `.orca/artifacts/<짧은-이름>/dispatch-spec.md`에 먼저 쓰고, `task-create --spec`(또는
 `worker-start --spec`)에는 **"그 절대경로를 전부 읽고 정확히 따르라"는 한 줄만** 넣는다.
 `orchestration` 스킬이 그렇게 하도록 지시하고 있으니, 워커 입력창에 스펙 전문 대신 경로
@@ -230,7 +301,8 @@ opencode는 항상 파일로 넘긴다. 그러면 주입되는 텍스트는 Orca
   코디네이터는 `worker-read`로 워커가 실제로 파일을 읽기 시작했는지 보고 대기 루프에
   들어간다.
 
-`ask`와 `worker_done`은 그대로 동작하고, QUALITY CONTRACT도 스펙 파일에 그대로 실린다.
+`ask`와 `worker_done`은 그대로 동작하고, QUALITY CONTRACT와 `[PROJECT RULES]`도 스펙
+파일에 그대로 실린다.
 품질 게이트는 claude·codex 워커와 똑같이 걸린다.
 
 #### Windows 사내 빌드에서 확인하는 법
@@ -287,10 +359,10 @@ flowchart TD
     ORC --> MODE{"직접 하나,<br/>워커에게 넘기나"}
 
     MODE -->|"직접"| SELF["트리거 시점마다<br/>스킬을 스스로 로드"]
-    MODE -->|"디스패치"| SPEC["QUALITY CONTRACT 를 spec 에 인라인<br/>2번 슬롯을 태스크 유형으로 치환"]
+    MODE -->|"디스패치"| SPEC["본문 → [PROJECT RULES] → QUALITY CONTRACT<br/>2번 슬롯을 태스크 유형으로 치환<br/>규칙은 원장이 있을 때만"]
     SPEC --> AG{"워커가<br/>opencode 인가"}
     AG -->|"아니다"| WK["worker-start<br/>claude / codex"]
-    AG -->|"그렇다"| WKO["스펙을 파일로 쓰고<br/>--spec 에는 경로 한 줄<br/>→ worker-start --agent opencode"]
+    AG -->|"그렇다"| WKO["세 부분을 파일로 쓰고<br/>--spec 에는 경로 한 줄<br/>→ worker-start --agent opencode"]
 
     SELF --> K["규약 1 · 범위 확정<br/>karpathy-guidelines"]
     WK --> K
@@ -304,6 +376,8 @@ flowchart TD
     V --> DONE["규약 6 · worker_done<br/>검증 명령과 결과를 본문에"]
     DONE --> CONF["코디네이터가 독립 확인<br/>diff 또는 검증 명령"]
     CONF --> REL["worker-release<br/>확인한 뒤에만"]
+    REL -.->|"사용자가 결과를 지적하면"| LED["규칙 원장 candidates.md 에 기록<br/>승격 승인 뒤 다음 run 부터<br/>[PROJECT RULES] 로 주입"]
+    LED -.-> SPEC
     V -.->|"직접 수행이었다면"| SREP["사용자에게 바로 보고<br/>5·6번은 보낼 대상이 없다"]
 
     IMPL -.->|"버그·예상 밖 동작"| S["규약 3 · 근본 원인 추적<br/>systematic-debugging"]
@@ -313,6 +387,7 @@ flowchart TD
 
     style SPEC fill:#1e3a5f,color:#fff
     style CONF fill:#1e3a5f,color:#fff
+    style LED fill:#1e3a5f,color:#fff
     style S fill:#5b3a1e,color:#fff
     style ASK fill:#5b3a1e,color:#fff
 ```

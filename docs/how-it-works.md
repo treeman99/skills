@@ -10,13 +10,13 @@ flowchart TD
     C --> D{"직접 할 일인가,<br/>워커에게 넘길 일인가"}
 
     D -->|직접| S1["품질 스킬을 그때그때 로드해서 따른다<br/>코디네이터도 면제 대상이 아니다"]
-    D -->|디스패치| S2["task-create --spec 에<br/>QUALITY CONTRACT 블록을 인라인"]
+    D -->|디스패치| S2["task-create --spec 에<br/>본문 → [PROJECT RULES] → QUALITY CONTRACT<br/>규칙은 원장이 있을 때만"]
 
     S2 --> T{"태스크 유형에 맞춰<br/>2번 슬롯을 채웠는가"}
     T -->|"&lt;&lt; 가 남아있음"| X["디스패치 금지<br/>워커가 빈칸으로 읽는다"]
     T -->|치환 완료| A{"워커가<br/>opencode 인가"}
     A -->|아니다| W["worker-start<br/>claude / codex"]
-    A -->|그렇다| WO["스펙을 파일로 쓰고<br/>--spec 에는 경로 한 줄<br/>→ worker-start --agent opencode"]
+    A -->|그렇다| WO["세 부분을 파일로 쓰고<br/>--spec 에는 경로 한 줄<br/>→ worker-start --agent opencode"]
 
     W --> G["워커가 게이트를 순서대로 밟는다"]
     WO --> G
@@ -24,8 +24,11 @@ flowchart TD
     R --> V["코디네이터가 독립 확인<br/>diff 또는 검증 명령"]
     V --> RL["worker-release<br/>확인 후에만"]
     RL --> U2["사용자에게 보고"]
+    U2 -.->|"사용자가 결과를 지적하면"| LG["규칙 원장에 기록<br/>승격 승인 뒤 다음 run 에 주입"]
+    LG -.-> S2
 
     style X fill:#7f1d1d,color:#fff
+    style LG fill:#1e3a5f,color:#fff
     style S2 fill:#1e3a5f,color:#fff
     style V fill:#1e3a5f,color:#fff
 ```
@@ -139,6 +142,54 @@ Orca 가이드는 코디네이터에게 *"`check --wait` 타임아웃을 워커 
 기다리라"* 고 지시한다. 옳은 규칙이지만, 워커가 사람을 기다리고 있으면 이 규칙 때문에
 교착이 풀리지 않는다. 규약 5는 어떤 태스크에서도 빼지 않는다.
 
+## 피드백 루프 (규칙 원장)
+
+QUALITY CONTRACT가 **한 태스크 안에서** 품질을 지킨다면, 규칙 원장은 **태스크와 run을
+넘어** 사용자의 지적을 쌓는다. 동작 규정은 사내 Orca가 서비스하는 가이드의 `Project Rule
+Ledger` 절이고, 이 번들은 원장이 없는 프로젝트에서 원장을 시작하는 부분만 더한다.
+
+```mermaid
+flowchart TD
+    RUN["run 시작"] --> HAS{".claude/harness/<br/>가 있나"}
+    HAS -->|있다| READ["rules.md 를 읽고<br/>미결 후보가 있으면 먼저 정리"]
+    READ --> INJ["태스크마다 scope 가 맞는 블록<br/>최대 5개를 [PROJECT RULES] 로 주입<br/>주입한 블록은 적중 +1"]
+    INJ --> WORK["워커 → worker_done → 코디네이터 확인"]
+    HAS -->|없다| WORK0["원장 없이 평소대로 진행"]
+
+    WORK --> FB{"사용자가 결과를 지적하거나<br/>실행 중 프로젝트 요구를 줬나"}
+    FB -->|그렇다| CAND["candidates.md 에 한 건 기록<br/>승인 불필요"]
+    FB -->|아니다| END0["run 종료"]
+    CAND --> SETTLE["마지막 워커 정산 뒤<br/>승격 후보를 사용자에게 묻는다<br/>관측 2회 이상 또는 명시 요청"]
+    SETTLE -->|승인| PROMO["rules.md 로 승격<br/>블록 12개·200줄 상한"]
+    SETTLE -->|기각| KEEP["후보로 남기거나 폐기<br/>retired.md"]
+    PROMO -.->|"다음 run"| RUN
+
+    WORK0 --> FB0{"사용자가 지적하거나<br/>프로젝트 요구를 줬나"}
+    FB0 -->|아니다| END1["묻지 않는다<br/>기록할 것이 없다"]
+    FB0 -->|그렇다| ASK1["세션에 한 번 묻는다<br/>원장을 만들고 기록할까"]
+    ASK1 -->|예| COPY["harness-template/ 3개를 복사<br/>이 지적을 C-001 로 기록"]
+    ASK1 -->|아니오| NOREC["지적은 이번 작업에만 반영<br/>어디에도 기록하지 않는다"]
+    COPY --> SETTLE
+
+    style HAS fill:#1e3a5f,color:#fff
+    style ASK1 fill:#1e3a5f,color:#fff
+    style NOREC fill:#5b3a1e,color:#fff
+```
+
+오른쪽 아래 갈래가 이 번들이 더한 부분이다. 가이드만 따르면 원장이 없는 프로젝트는
+**"없다" 갈래에서 끝나고 다시 돌아오지 않는다.** 가이드가 "요청 없이 만들지 않는다"고 정해
+두었고, 원장 파일은 Orca 포크 저장소에만 커밋돼 있기 때문이다. 이 번들은 기록할 거리가
+처음 생기는 순간에만 묻는다. 사용자가 답한 질문은 요청이므로 가이드와 부딪치지 않는다.
+
+세 가지가 루프를 조용히 끊을 수 있어서, 이 번들이 따로 막는다.
+
+- **기록 위치.** 원장은 작업 파일이 아니다. `.orca/artifacts/`에 적으면 다음 run이 읽지
+  않는다. `Working files` 절이 `.claude/harness/`를 예외로 명시한다.
+- **opencode 포인터.** `[PROJECT RULES]`를 한 줄 포인터 뒤에 붙이면 여러 줄 입력이 되고,
+  빼면 규칙이 가지 않는다. 스펙 파일에 본문 → 규칙 → 규약 순으로 넣는다.
+- **형식.** 코디네이터가 즉석에서 형식을 지으면 나중의 승격·폐기가 그 형식을 읽지 못한다.
+  `harness-template/`를 그대로 복사하고, 템플릿이 없으면 만들지 않고 재설치를 요청한다.
+
 ## 이 구조가 실제로 잡아내는 것
 
 `Workspace/widget`(Swift, AI 사용량 메뉴바 앱)에 가상 기능을 붙여 검증한 결과다.
@@ -183,5 +234,11 @@ Orca 가이드는 코디네이터에게 *"`check --wait` 타임아웃을 워커 
 | 리팩터링인데 새 테스트를 만들었다 | 리팩터링 행 대신 기능 구현 행을 넣었다 | spec 2번 줄이 "새 테스트를 만들지 않는다"인지 |
 | 사다리를 핑계로 테스트를 건너뛰거나 보고서를 3줄로 줄였다 | 규약 1-2번의 우선순위 문장을 빼고 사다리만 실었다 | spec 1-2번에 "2번이 이긴다"와 "6번이 정한다"가 있는지 |
 | 계획·노트 파일이 저장소 곳곳에 남았다 | 규약 1-1을 spec에 안 붙였다 — 워커는 스킬 파일이 아니라 spec만 본다 | `git status`에 `.orca/` 밖 작업 파일이 있는지 |
+| 피드백 루프가 전혀 돌지 않는다 — 지적해도 다음 워커가 같은 실수를 한다 | 프로젝트에 `.claude/harness/`가 없다. 원장은 그 폴더가 있을 때만 동작하고 저절로 만들어지지 않는다 | `dir .claude\harness`. 없으면 "규칙 원장 만들어줘"라고 요청하거나, 다음 지적 때 뜨는 질문에 승낙한다 |
+| 원장 폴더가 있는데도 아무것도 읽거나 기록하지 않는다 | 서비스 가이드에 원장 절이 없는 빌드다(공개 Orca 설치본) | `orca skills get orchestration \| findstr /C:"Project Rule Ledger"`가 제목 한 줄을 내는지 |
+| 지적이 `.orca/artifacts/` 아래에 적혔다 | 원장 예외가 없는 옛 orchestration 사본이 로드됐다 | 두 사본에서 `grep -c 'claude/harness' SKILL.md`가 1 이상인지 |
+| 원장을 만들자고 했더니 "템플릿이 없다"며 멈춘다 | orchestration 폴더에서 `SKILL.md`만 복사했다 | `harness-template\`에 파일 3개가 있는지 |
+| 승격한 규칙이 opencode 워커에만 가지 않는다 | `[PROJECT RULES]`를 포인터 뒤 `--spec`에 붙였거나 뺐다 | `dispatch-spec.md`에 `[PROJECT RULES]`가 있는지 |
+| 원장을 만들었는데 다른 클론·팀원에게는 규칙이 없다 | 프로젝트가 `.claude/`를 ignore 하거나 원장을 커밋하지 않았다 | `git check-ignore -v .claude/harness/rules.md` |
 
 설치와 검증 절차는 [README](../README.md)에 있다.
