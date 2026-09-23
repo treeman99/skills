@@ -215,7 +215,7 @@ task id를 우선하는 이유는 코디네이터와 `worker_done` 페이로드�
 
 `orca skills get orchestration`이 서비스하는 가이드에는 이 규약이 없다. 사내 Orca 가이드에
 같은 취지의 절(`f1c3963d`)이 v1.4.198-samsungds까지 있었지만 상류 v1.4.199 머지에서
-빠졌고, v1.4.205-samsungds와 상류 v1.4.206·main `76d87604`에도 없다(2026-09-21 확인).
+빠졌고, v1.4.207-samsungds와 상류 v1.4.209·main `dac82f61`에도 없다(2026-09-23 확인).
 그래서 지금은 이 번들이 유일하게 실제로 걸리는 경로다. 서비스 가이드가 이 규약을 다시
 담으면 이 절은 지우고 가이드를 따른다.
 
@@ -703,7 +703,7 @@ Orca Settings의 스킬 설치·업데이트 버튼도 같은 `npx skills ...` �
 **description은 1024자를 넘기지 않는다.** Agent Skills 스펙의 상한은 1024자이고 Codex와
 Copilot CLI는 넘는 스킬을 **경고 없이 버린다**. opencode 1.18.26은 넘어도 그대로 로드했다
 (1038자이던 시절에 확인함). 이 번들은 `~/.claude/skills`처럼 다른 에이전트와 공유하는
-경로에 들어가므로, 상류를 반영할 때 description 길이를 함께 본다. 현재(`76d87604`)는
+경로에 들어가므로, 상류를 반영할 때 description 길이를 함께 본다. 현재(`dac82f61`)는
 `orchestration` 524자, `orca-cli` 587자다(YAML 접힘 뒤 기준, `orca-cli`는 아래 수정 반영
 후). 한때 1038자·1015자였지만 상류 `bba68b1b`가 압축했고, `12d744f2`가 Computer
 Use·Playwright 라우팅 문장을 빼면서 더 줄었다.
@@ -732,8 +732,8 @@ Share Skills 페인, `orca skills share` 명령)를 제거했으므로, 상류 d
 
 | 스킬 | 상류 | 커밋 | 라이선스 |
 |---|---|---|---|
-| `orchestration` | `stablyai/orca` | `76d87604` | 상류 저장소 라이선스 |
-| `orca-cli` | `stablyai/orca` | `76d87604` | 상류 저장소 라이선스 |
+| `orchestration` | `stablyai/orca` | `dac82f61` | 상류 저장소 라이선스 |
+| `orca-cli` | `stablyai/orca` | `dac82f61` | 상류 저장소 라이선스 |
 | `karpathy-guidelines` | `multica-ai/andrej-karpathy-skills` | `2c606141936f` | MIT |
 | `ponytail` | `DietrichGebert/ponytail` | `e3ba2aa6f1e6` | MIT (Dietrich Gebert) |
 | `test-driven-development` | `obra/superpowers` | `5bf4e78011` | MIT (Jesse Vincent) |
