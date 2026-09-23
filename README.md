@@ -14,35 +14,40 @@
 
 ## 무엇이 들어 있나
 
-### Orca 번들 스킬 — `stablyai/orca` `76d87604` (2026-09-20)
+### Orca 번들 스킬 — `stablyai/orca` `dac82f61` (2026-09-23)
 
 Orca가 `orca skills install`로 설치하는 스킬 전부다. 8종이고, 이름은 설치된 Orca의
 `orca skills list --json`이 내놓는 목록과 맞춰 확인한다.
 
-커밋은 `0d23ea6e`에서 `76d87604`로 올렸지만 **stub 8종은 바이트 단위로 같다.** 그 사이
-297커밋 중 상류 `skills/`를 건드린 것은 0건이다.
+커밋은 `76d87604`에서 `dac82f61`로 올렸고, **이번에는 stub 8종의 본문이 한 문단씩
+바뀌었다.** 상류 `9af6a3d798`(#22341)이 각 stub 끝 문단의 "Orca가 안 떠 있으면 `ORCA open
+--json` 후 재시도" 뒤에 한 문장을 끼웠다 — 명령이 `runtime_access_denied`로 실패하면
+샌드박스가 연결을 막은 것이니 권한을 올려 다시 실행하고, `ORCA open`이나 Orca 재시작은
+하지 말라는 내용이다. frontmatter `description`은 8종 모두 그대로다.
 
-**대신 지난번 적어 둔 description 변경이 이번 릴리스에 담겼다.** `12d744f2`(#21069)는
-v1.4.205 태그 이후 main에 들어갔는데, v1.4.206 태그(`c62eca39`, 2026-09-20)의
-`computer-use`·`orca-cli`·`orchestration` stub은 `0d23ea6e`와 트리 해시가 같다 — 즉
-**v1.4.206 앱부터 새 description을 설치한다.** 릴리스 태그는 릴리스 브랜치라 main 조상이
-아니므로 `merge-base --is-ancestor`로는 판정할 수 없다(`12d744f2`도 "조상 아님"으로
-나온다). 릴리스에 담겼는지는 트리 해시를 대조해 확인한다.
+**이 변경은 v1.4.209 릴리스에 담기지 않았다.** v1.4.209 태그(`e4d8a9dbc2`, 2026-09-23)와
+v1.4.207 태그(`6238fd6d4d`)의 `skills/`·`skill-guides/` 트리 해시는 `76d87604`와 같다.
+즉 v1.4.207·v1.4.209 앱이 설치하는 stub과 `skills get`이 서비스하는 가이드는 v1.4.206과
+같고, `runtime_access_denied` 오류 코드 자체도 v1.4.209의 `src/`에는 없다(상류 main의
+`src/cli/runtime/runtime-access-denied.ts`에서 처음 생긴다). 릴리스 태그는 릴리스 브랜치라
+`merge-base --is-ancestor`로는 판정할 수 없으므로 트리 해시를 대조해 확인한다.
 
 ```bash
-git rev-parse v1.4.206:skills/orchestration   # 0d23ea6e:skills/orchestration 과 같아야 한다
+git rev-parse v1.4.209:skills/orchestration   # 76d87604:skills/orchestration 과 같다
 ```
 
-그 전 네 갱신(`bba68b1b` → `aac38d69` → `37631030` → `775a9326` → `78609330`,
-v1.4.200~v1.4.204)은 stub이 그대로였다.
+그 전 갱신 중 `0d23ea6e` → `76d87604`(v1.4.206)과 `bba68b1b` → … → `78609330`
+(v1.4.200~v1.4.204)은 stub이 그대로였고, `78609330` → `0d23ea6e`는 description 3종이
+바뀌었다(`12d744f2`, #21069, v1.4.206에 담김).
 
-가이드(`skill-guides/`, 이 브랜치가 담지 않는다)는 이번에 한 번 바뀌었다 —
-`3336933cc8`(#21523)이 `worker-list`를 newest-first로 뒤집고 100행에서 잘릴 때
-`warnings`를 붙였다. 이것도 v1.4.206에 담겼다(`skill-guides/orchestration.md`의
-v1.4.206 트리 해시가 상류 main과 같다).
+가이드(`skill-guides/`, 이 브랜치가 담지 않는다)는 상류 main에서 두 번 바뀌었고 둘 다
+v1.4.209에 담기지 않았다 — `eb92222e7f`(#21705)와 `52a1e2875b`(#22383)가
+`references/coordinator-loop.md`의 `--model` 허용 에이전트 목록에 Antigravity와 Muse를
+더하고, opencode 등 나머지 에이전트는 `--model`을 거절하므로 자기 설정의 모델을 쓴다고
+적었다.
 
-**본문은 설치된 앱보다 상류 쪽이 앞서 있을 수 있다.** 위 description 변경이 그 예다.
-본문의 마지막 내용 변경은 `bba68b1b`였다 — 8종의 description을 압축하고, "이건
+**본문은 설치된 앱보다 상류 쪽이 앞서 있을 수 있다.** 위 `runtime_access_denied` 문단이 그
+예다. 그 전 본문의 큰 변경은 `bba68b1b`였다 — 8종의 description을 압축하고, "이건
 stub이다"라는 설명·`skills get` 안내·구버전 바이너리용 부트스트랩 블록을 한 문단으로
 합쳤다. `orchestration`에는 참조 문서 분할 로딩(`skills get orchestration --reference
 references/<file>.md`, `--references`, `--full`)이 새로 들어갔다. 이 플래그를 모르는
@@ -97,6 +102,9 @@ v6.4.1이 더한 새 스킬(`diagnosing-superpowers` 등)은 이 배포판이 �
 
 `DietrichGebert/ponytail`(`e3ba2aa6f1e6`)과 `multica-ai`(`2c606141936f`)는
 **2026-09-21 재확인 시점에도 커밋이 그대로다.** 두 저장소 HEAD가 위에 적힌 커밋이다.
+
+**2026-09-23(v1.4.209) 재확인에서는 품질 스킬 세 상류 모두 HEAD가 위 표의 커밋 그대로다**
+(`5bf4e78011`·`2c606141936f`·`e3ba2aa6f1e6`). 이번 갱신은 Orca stub만 바뀌었다.
 
 `orca_skill`은 이 4종에 `Orca dispatch 컨텍스트` 절과 출처절을 덧붙여 쓴다. 무엇이
 덧붙었는지는 이 브랜치와 diff를 뜨면 그대로 나온다.
