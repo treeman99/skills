@@ -14,40 +14,44 @@
 
 ## 무엇이 들어 있나
 
-### Orca 번들 스킬 — `stablyai/orca` `dac82f61` (2026-09-23)
+### Orca 번들 스킬 — `stablyai/orca` `d606be3a` (2026-09-28)
 
 Orca가 `orca skills install`로 설치하는 스킬 전부다. 8종이고, 이름은 설치된 Orca의
 `orca skills list --json`이 내놓는 목록과 맞춰 확인한다.
 
-커밋은 `76d87604`에서 `dac82f61`로 올렸고, **이번에는 stub 8종의 본문이 한 문단씩
-바뀌었다.** 상류 `9af6a3d798`(#22341)이 각 stub 끝 문단의 "Orca가 안 떠 있으면 `ORCA open
---json` 후 재시도" 뒤에 한 문장을 끼웠다 — 명령이 `runtime_access_denied`로 실패하면
-샌드박스가 연결을 막은 것이니 권한을 올려 다시 실행하고, `ORCA open`이나 Orca 재시작은
-하지 말라는 내용이다. frontmatter `description`은 8종 모두 그대로다.
+커밋은 `dac82f61`에서 `d606be3a`로 올렸지만 **파일은 하나도 바뀌지 않았다.** 그 사이
+430커밋 중 `skills/`를 건드린 것이 없어 두 커밋의 `skills/` 트리 해시가 같다. 가이드
+(`skill-guides/`)도 같다. 커밋만 올린 것은 v1.4.216 릴리스(2026-09-28)까지 대조했다는
+기록을 남기기 위해서다.
 
-**이 변경은 v1.4.209 릴리스에 담기지 않았다.** v1.4.209 태그(`e4d8a9dbc2`, 2026-09-23)와
-v1.4.207 태그(`6238fd6d4d`)의 `skills/`·`skill-guides/` 트리 해시는 `76d87604`와 같다.
-즉 v1.4.207·v1.4.209 앱이 설치하는 stub과 `skills get`이 서비스하는 가이드는 v1.4.206과
-같고, `runtime_access_denied` 오류 코드 자체도 v1.4.209의 `src/`에는 없다(상류 main의
-`src/cli/runtime/runtime-access-denied.ts`에서 처음 생긴다). 릴리스 태그는 릴리스 브랜치라
+**v1.4.216 태그(`2ec06f2470`)의 `skills/`·`skill-guides/` 트리 해시는 `dac82f61`과 같다.**
+앞 갱신에서 "v1.4.209에 담기지 않았다"고 적은 `runtime_access_denied` 문장(`9af6a3d798`,
+#22341)과 가이드의 Antigravity·Muse `--model` 문단은 v1.4.211(2026-09-25)부터 릴리스에
+담겼다 — v1.4.211~v1.4.216 태그가 모두 같은 트리이고, v1.4.210까지는 `76d87604`의
+stub이다. `runtime_access_denied` 오류 코드도 v1.4.216의 `src/`에 있다. 즉 지금은 이
+브랜치의 stub과 릴리스된 앱이 설치하는 stub이 같다. 릴리스 태그는 릴리스 브랜치라
 `merge-base --is-ancestor`로는 판정할 수 없으므로 트리 해시를 대조해 확인한다.
 
 ```bash
-git rev-parse v1.4.209:skills/orchestration   # 76d87604:skills/orchestration 과 같다
+git rev-parse v1.4.216:skills   # d606be3a:skills 와 같다
 ```
+
+그 전 갱신 `76d87604` → `dac82f61`은 stub 8종의 끝 문단에 `runtime_access_denied` 안내
+한 문장이 붙었다(위 `9af6a3d798`). frontmatter `description`은 8종 모두 그대로였다.
 
 그 전 갱신 중 `0d23ea6e` → `76d87604`(v1.4.206)과 `bba68b1b` → … → `78609330`
 (v1.4.200~v1.4.204)은 stub이 그대로였고, `78609330` → `0d23ea6e`는 description 3종이
 바뀌었다(`12d744f2`, #21069, v1.4.206에 담김).
 
-가이드(`skill-guides/`, 이 브랜치가 담지 않는다)는 상류 main에서 두 번 바뀌었고 둘 다
-v1.4.209에 담기지 않았다 — `eb92222e7f`(#21705)와 `52a1e2875b`(#22383)가
+가이드(`skill-guides/`, 이 브랜치가 담지 않는다)는 `76d87604` 뒤로 두 번 바뀌었고, 둘 다
+v1.4.211부터 릴리스에 담겼다 — `eb92222e7f`(#21705)와 `52a1e2875b`(#22383)가
 `references/coordinator-loop.md`의 `--model` 허용 에이전트 목록에 Antigravity와 Muse를
 더하고, opencode 등 나머지 에이전트는 `--model`을 거절하므로 자기 설정의 모델을 쓴다고
 적었다.
 
-**본문은 설치된 앱보다 상류 쪽이 앞서 있을 수 있다.** 위 `runtime_access_denied` 문단이 그
-예다. 그 전 본문의 큰 변경은 `bba68b1b`였다 — 8종의 description을 압축하고, "이건
+**본문은 설치된 앱보다 상류 쪽이 앞서 있을 수 있다.** `runtime_access_denied` 문단이 그
+예였다(상류 main에 들어간 뒤 v1.4.211에서야 릴리스됐다). 그 전 본문의 큰 변경은
+`bba68b1b`였다 — 8종의 description을 압축하고, "이건
 stub이다"라는 설명·`skills get` 안내·구버전 바이너리용 부트스트랩 블록을 한 문단으로
 합쳤다. `orchestration`에는 참조 문서 분할 로딩(`skills get orchestration --reference
 references/<file>.md`, `--references`, `--full`)이 새로 들어갔다. 이 플래그를 모르는
@@ -73,9 +77,9 @@ references/<file>.md`, `--references`, `--full`)이 새로 들어갔다. 이 플
 | 스킬 | 상류 | 커밋 | 라이선스 |
 |---|---|---|---|
 | `karpathy-guidelines` | `multica-ai/andrej-karpathy-skills` | `2c606141936f` | MIT |
-| `test-driven-development` | `obra/superpowers` | `5bf4e78011` | MIT (Jesse Vincent) |
-| `systematic-debugging` | `obra/superpowers` | `5bf4e78011` | MIT (Jesse Vincent) |
-| `verification-before-completion` | `obra/superpowers` | `5bf4e78011` | MIT (Jesse Vincent) |
+| `test-driven-development` | `obra/superpowers` | `8ca22dba9a` | MIT (Jesse Vincent) |
+| `systematic-debugging` | `obra/superpowers` | `8ca22dba9a` | MIT (Jesse Vincent) |
+| `verification-before-completion` | `obra/superpowers` | `8ca22dba9a` | MIT (Jesse Vincent) |
 | `ponytail` 외 5종 | `DietrichGebert/ponytail` | `e3ba2aa6f1e6` | MIT (Dietrich Gebert) |
 
 ponytail의 커밋은 `356918eba965`에서 `e3ba2aa6f1e6`(v4.10.0)으로 올렸지만 **파일은
@@ -85,8 +89,13 @@ ponytail의 커밋은 `356918eba965`에서 `e3ba2aa6f1e6`(v4.10.0)으로 올렸�
 갱신(`2ed6c52c9d7e` → `356918eba965`)도 README 로고 파일 이름뿐이었다. 커밋만 올린 것은
 어느 시점까지 대조했는지를 남기기 위해서다.
 
-superpowers의 커밋은 `b36e0829c6d0`에서 `5bf4e78011`(v6.4.1)로 올렸고, **담는 3종 중
-2종의 파일이 바뀌었다.**
+superpowers의 커밋은 `5bf4e78011`(v6.4.1)에서 `8ca22dba9a`(v6.4.2, 2026-09-25)로 올렸지만
+**담는 3종과 `LICENSE`는 바이트 단위로 같다.** 그 사이 커밋은 릴리스 하나(#2384)뿐이고,
+바뀐 스킬은 `writing-plans`(`SKILL.md` 축약, `plan-document-reviewer-prompt.md` 삭제)라
+이 배포판이 담는 3종 밖이다. 나머지는 플러그인 매니페스트 버전과 릴리스 노트다.
+
+그 전 갱신 `b36e0829c6d0` → `5bf4e78011`(v6.4.1)에서는 **담는 3종 중 2종의 파일이
+바뀌었다.**
 
 - `test-driven-development/SKILL.md` — GREEN 단계 "Other tests fail? Fix now." 뒤에
   문단이 하나 붙었다. "other tests"는 방금 쓴 테스트 파일이 아니라 **프로젝트 전체
@@ -105,6 +114,10 @@ v6.4.1이 더한 새 스킬(`diagnosing-superpowers` 등)은 이 배포판이 �
 
 **2026-09-23(v1.4.209) 재확인에서는 품질 스킬 세 상류 모두 HEAD가 위 표의 커밋 그대로다**
 (`5bf4e78011`·`2c606141936f`·`e3ba2aa6f1e6`). 이번 갱신은 Orca stub만 바뀌었다.
+
+**2026-09-29(v1.4.216) 재확인에서는 superpowers만 커밋이 올라갔고(위 v6.4.2), ponytail
+(`e3ba2aa6f1e6`)과 karpathy(`2c606141936f`)는 HEAD가 그대로다.** 이번 갱신은 Orca와
+superpowers 모두 커밋만 올렸고 파일 변경은 없다.
 
 `orca_skill`은 이 4종에 `Orca dispatch 컨텍스트` 절과 출처절을 덧붙여 쓴다. 무엇이
 덧붙었는지는 이 브랜치와 diff를 뜨면 그대로 나온다.
