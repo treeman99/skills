@@ -14,27 +14,31 @@
 
 ## 무엇이 들어 있나
 
-### Orca 번들 스킬 — `stablyai/orca` `d606be3a` (2026-09-28)
+### Orca 번들 스킬 — `stablyai/orca` `6729f1b8` (2026-09-30)
 
 Orca가 `orca skills install`로 설치하는 스킬 전부다. 8종이고, 이름은 설치된 Orca의
 `orca skills list --json`이 내놓는 목록과 맞춰 확인한다.
 
-커밋은 `dac82f61`에서 `d606be3a`로 올렸지만 **파일은 하나도 바뀌지 않았다.** 그 사이
-430커밋 중 `skills/`를 건드린 것이 없어 두 커밋의 `skills/` 트리 해시가 같다. 가이드
-(`skill-guides/`)도 같다. 커밋만 올린 것은 v1.4.216 릴리스(2026-09-28)까지 대조했다는
-기록을 남기기 위해서다.
+커밋은 `d606be3a`에서 `6729f1b8`로 올렸지만 **파일은 하나도 바뀌지 않았다.** 그 사이
+171커밋 중 `skills/`를 건드린 것이 없어 두 커밋의 `skills/` 트리 해시가 같다. 커밋만 올린
+것은 v1.4.218 릴리스(2026-09-30)까지 대조했다는 기록을 남기기 위해서다.
 
-**v1.4.216 태그(`2ec06f2470`)의 `skills/`·`skill-guides/` 트리 해시는 `dac82f61`과 같다.**
-앞 갱신에서 "v1.4.209에 담기지 않았다"고 적은 `runtime_access_denied` 문장(`9af6a3d798`,
-#22341)과 가이드의 Antigravity·Muse `--model` 문단은 v1.4.211(2026-09-25)부터 릴리스에
-담겼다 — v1.4.211~v1.4.216 태그가 모두 같은 트리이고, v1.4.210까지는 `76d87604`의
-stub이다. `runtime_access_denied` 오류 코드도 v1.4.216의 `src/`에 있다. 즉 지금은 이
-브랜치의 stub과 릴리스된 앱이 설치하는 stub이 같다. 릴리스 태그는 릴리스 브랜치라
+**v1.4.217(`11d9789662`)·v1.4.218(`75ea502733`) 태그의 `skills/`·`skill-guides/` 트리
+해시는 `d606be3a`와 같다.** 즉 v1.4.211부터 v1.4.218까지 릴리스된 앱이 설치하는 stub과
+서비스하는 가이드는 모두 같고, 이 브랜치의 stub과도 같다. 릴리스 태그는 릴리스 브랜치라
 `merge-base --is-ancestor`로는 판정할 수 없으므로 트리 해시를 대조해 확인한다.
 
 ```bash
-git rev-parse v1.4.216:skills   # d606be3a:skills 와 같다
+git rev-parse v1.4.218:skills   # 6729f1b8:skills, d606be3a:skills 와 같다
 ```
+
+가이드(`skill-guides/`, 이 브랜치가 담지 않는다)는 v1.4.218 태그 뒤 상류 main에서 바뀌었고
+**아직 릴리스되지 않았다.** `e03870403e`(#23982)·`9afd1101ff`(#23994)가 워커 보고에서
+dispatch capability를 빼고(호스트가 더는 발급하지 않는다, 구버전 호스트의 프리앰블은
+`--dispatch-capability`를 계속 붙인다), `3047353017`(#23983)이 `worker-abandon`의 정착
+규칙과 태스크 취소 절차(`task-update --status failed --result cancelled`)를 더했다.
+
+그 전 갱신 `dac82f61` → `d606be3a`(v1.4.216)도 파일 변경 없이 커밋만 올렸다.
 
 그 전 갱신 `76d87604` → `dac82f61`은 stub 8종의 끝 문단에 `runtime_access_denied` 안내
 한 문장이 붙었다(위 `9af6a3d798`). frontmatter `description`은 8종 모두 그대로였다.
@@ -43,7 +47,7 @@ git rev-parse v1.4.216:skills   # d606be3a:skills 와 같다
 (v1.4.200~v1.4.204)은 stub이 그대로였고, `78609330` → `0d23ea6e`는 description 3종이
 바뀌었다(`12d744f2`, #21069, v1.4.206에 담김).
 
-가이드(`skill-guides/`, 이 브랜치가 담지 않는다)는 `76d87604` 뒤로 두 번 바뀌었고, 둘 다
+그 전에 가이드는 `76d87604` 뒤로 두 번 바뀌었고, 둘 다
 v1.4.211부터 릴리스에 담겼다 — `eb92222e7f`(#21705)와 `52a1e2875b`(#22383)가
 `references/coordinator-loop.md`의 `--model` 허용 에이전트 목록에 Antigravity와 Muse를
 더하고, opencode 등 나머지 에이전트는 `--model`을 거절하므로 자기 설정의 모델을 쓴다고
