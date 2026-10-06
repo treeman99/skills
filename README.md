@@ -215,7 +215,7 @@ task id를 우선하는 이유는 코디네이터와 `worker_done` 페이로드�
 
 `orca skills get orchestration`이 서비스하는 가이드에는 이 규약이 없다. 사내 Orca 가이드에
 같은 취지의 절(`f1c3963d`)이 v1.4.198-samsungds까지 있었지만 상류 v1.4.199 머지에서
-빠졌고, v1.4.218-samsungds와 상류 v1.4.220·main `53899251`에도 없다(2026-10-04 확인).
+빠졌고, v1.4.220-samsungds와 상류 v1.4.221·main `5cf3585b`에도 없다(2026-10-06 확인).
 그래서 지금은 이 번들이 유일하게 실제로 걸리는 경로다. 서비스 가이드가 이 규약을 다시
 담으면 이 절은 지우고 가이드를 따른다.
 
@@ -429,10 +429,10 @@ QUALITY CONTRACT를 워커 워크트리의
 한 줄이 보이더라도 잘못된 것이 아니다.
 
 **왜 `worker-start`인가.** 사내 Orca 빌드에서 워커 패널 자동 분할, 워커 감독 행,
-dispatch capability, 전달 리시트, 완료 시 탭 자동 닫기는 전부 `worker-start`가 워커
-터미널을 만들 때만 붙는다. `terminal create`나 `worktree create --agent opencode`로 띄운
-터미널은 일반 터미널이라 조율자 옆에 탭만 추가되고, 트러블슈팅 로그에 worker 줄이 한 줄도
-남지 않는다. "opencode 워커만 분할이 안 된다"는 신고가 바로 이것이었다 — 이전 판의 이 절이
+워커 프로세스에 묶인 보고 권한(`ask`·`worker_done`), 전달 리시트, 완료 시 탭 자동 닫기는
+전부 `worker-start`가 워커 터미널을 만들 때만 붙는다. `terminal create`나
+`worktree create --agent opencode`로 띄운 터미널은 일반 터미널이라 조율자 옆에 탭만
+추가되고, 트러블슈팅 로그에 worker 줄이 한 줄도 남지 않는다. "opencode 워커만 분할이 안 된다"는 신고가 바로 이것이었다 — 이전 판의 이 절이
 opencode에 한해 `worker-start`를 우회하게 했기 때문이고, 그 판단은 사내 포크가 아니라
 업스트림 앱을 보고 내린 것이었다. 지금은 우회를 없앴다.
 
@@ -441,7 +441,7 @@ bracketed paste 대신 평문으로 쓴다). 개행 하나하나가 키 이벤�
 입력창이 "붙여넣기 중"이라는 판단을 놓고 제출해 버리는지는 opencode 버전과 화면 크기,
 그때의 머신 부하에 달려 있다. **안전한 길이라는 게 존재하지 않아서** 크기로 나누지 않고
 opencode는 항상 파일로 넘긴다. 그러면 주입되는 텍스트는 Orca의 고정 라이프사이클
-헤더(약 2.7 KB)와 포인터 한 줄뿐이라 태스크 길이와 무관하게 크기가 같다. Orca는 자르지
+헤더(약 4.7 KB)와 포인터 한 줄뿐이라 태스크 길이와 무관하게 크기가 같다. Orca는 자르지
 않는다(200 KB까지 손실 0). 파일은 통째로 읽히거나, 못 읽었다고 보고되거나 둘 중 하나다.
 
 그래서 opencode 워커를 쓰면 **눈에 보이는 차이가 둘** 있다.
@@ -451,7 +451,7 @@ opencode는 항상 파일로 넘긴다. 그러면 주입되는 텍스트는 Orca
   파일을 `task-create` 전에 써야 해서 아직 task id가 없기 때문이다.
 - **Windows에서는 `worker-start` 리시트에 `submit: unverified` 경고가 붙을 수 있다.**
   ConPTY가 opencode의 제목 신호를 삼켜 Orca가 턴 시작을 관측하지 못하는 것이고, 사내
-  빌드는 이것을 실패로 올리지 않는다. dispatch는 살아 있고 capability도 발급됐다.
+  빌드는 이것을 실패로 올리지 않는다. 프롬프트는 써졌고 dispatch도 살아 있다.
   코디네이터는 `worker-read`로 워커가 실제로 파일을 읽기 시작했는지 보고 대기 루프에
   들어간다.
 
@@ -735,7 +735,7 @@ Share Skills 페인, `orca skills share` 명령)를 제거했으므로, 상류 d
 | `orchestration` | `stablyai/orca` | `53899251` | 상류 저장소 라이선스 |
 | `orca-cli` | `stablyai/orca` | `53899251` | 상류 저장소 라이선스 |
 | `karpathy-guidelines` | `multica-ai/andrej-karpathy-skills` | `2c606141936f` | MIT |
-| `ponytail` | `DietrichGebert/ponytail` | `c982cd411abb` | MIT (Dietrich Gebert) |
+| `ponytail` | `DietrichGebert/ponytail` | `552acd5efd0a` | MIT (Dietrich Gebert) |
 | `test-driven-development` | `obra/superpowers` | `8ca22dba9a` | MIT (Jesse Vincent) |
 | `systematic-debugging` | `obra/superpowers` | `8ca22dba9a` | MIT (Jesse Vincent) |
 | `verification-before-completion` | `obra/superpowers` | `8ca22dba9a` | MIT (Jesse Vincent) |
