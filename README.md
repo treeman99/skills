@@ -23,13 +23,13 @@ Orca가 `orca skills install`로 설치하는 스킬 전부다. 8종이고, 이�
 439커밋 중 `skills/`를 건드린 것이 없어 두 커밋의 `skills/` 트리 해시가 같다. 커밋만 올린
 것은 v1.4.220 릴리스(2026-10-04)까지 대조했다는 기록을 남기기 위해서다.
 
-**v1.4.219(`e705cac04a`)·v1.4.220(`a7927b28ce`) 태그의 `skills/` 트리 해시는 `d606be3a`와
-같다.** 즉 v1.4.211부터 v1.4.220까지 릴리스된 앱이 설치하는 stub은 모두 같고, 이 브랜치의
-stub과도 같다. 릴리스 태그는 릴리스 브랜치라 `merge-base --is-ancestor`로는 판정할 수
-없으므로 트리 해시를 대조해 확인한다.
+**v1.4.219(`e705cac04a`)·v1.4.220(`a7927b28ce`)·v1.4.221(`9dd8812384`) 태그의 `skills/` 트리
+해시는 `d606be3a`와 같다.** 즉 v1.4.211부터 v1.4.221까지 릴리스된 앱이 설치하는 stub은 모두
+같고, 이 브랜치의 stub과도 같다. 릴리스 태그는 릴리스 브랜치라
+`merge-base --is-ancestor`로는 판정할 수 없으므로 트리 해시를 대조해 확인한다.
 
 ```bash
-git rev-parse v1.4.220:skills   # 53899251:skills, d606be3a:skills 와 같다
+git rev-parse v1.4.221:skills   # 53899251:skills, d606be3a:skills 와 같다
 ```
 
 가이드(`skill-guides/`, 이 브랜치가 담지 않는다)는 이번 구간에 **릴리스됐다.** 앞 갱신에서
@@ -42,10 +42,15 @@ v1.4.219부터 담겼다 — v1.4.219의 `skill-guides/` 트리 해시가 `6729f
 `6e7e964705`(#22636)를 더했다 — `ORCA status --json`이 자기 Orca 세션 ID를
 `caller.orcaSessionId`로 보여 준다는 한 줄이다.
 
-v1.4.220 태그 뒤 상류 main에서는 `orca-cli` 가이드만 바뀌었고 **아직 릴리스되지 않았다.**
-`bde1c09866`·`2fc517c1c6`·`c1d403a47b`가 `repo set --external-worktree-visibility`,
-`worktree set --unread/--read`, `worktree create|set`의 `--pr`·`--gitlab-issue`·`--gitlab-mr`
-링크 플래그를 더했다.
+v1.4.220 태그 뒤 상류 main에서 바뀐 `orca-cli` 가이드는 v1.4.221에 담겼다 — v1.4.221의
+`skill-guides/` 트리 해시가 `53899251`과 같다. `bde1c09866`·`2fc517c1c6`·`c1d403a47b`가
+`repo set --external-worktree-visibility`, `worktree set --unread/--read`,
+`worktree create|set`의 `--pr`·`--gitlab-issue`·`--gitlab-mr` 링크 플래그를 더했다.
+
+v1.4.221 태그 뒤 상류 main에서는 `8e5080c132`(#24624)가 `references/coordinator-loop.md`를
+바꿨고 **아직 릴리스되지 않았다.** opencode도 기존 워크트리에서는 실행 호스트가 CLI 버전과
+모델을 확인하면 `--model`을 받는다는 내용이라, 아래 "opencode 등 나머지 에이전트는
+`--model`을 거절한다"가 릴리스되면 바뀐다.
 
 그 전 갱신 `d606be3a` → `6729f1b8`(v1.4.218)과 `dac82f61` → `d606be3a`(v1.4.216)도 파일
 변경 없이 커밋만 올렸다.
@@ -94,27 +99,34 @@ references/<file>.md`, `--references`, `--full`)이 새로 들어갔다. 이 플
 | `test-driven-development` | `obra/superpowers` | `8ca22dba9a` | MIT (Jesse Vincent) |
 | `systematic-debugging` | `obra/superpowers` | `8ca22dba9a` | MIT (Jesse Vincent) |
 | `verification-before-completion` | `obra/superpowers` | `8ca22dba9a` | MIT (Jesse Vincent) |
-| `ponytail` 외 5종 | `DietrichGebert/ponytail` | `c982cd411abb` | MIT (Dietrich Gebert) |
+| `ponytail` 외 5종 | `DietrichGebert/ponytail` | `552acd5efd0a` | MIT (Dietrich Gebert) |
 
-ponytail의 커밋은 `e3ba2aa6f1e6`(v4.10.0)에서 `c982cd411abb`(v4.10.3 뒤 10커밋,
-2026-10-03)로 올렸고, **담는 6종 중 4종의 파일이 바뀌었다.** 모두 v4.10.3 태그 뒤의
-커밋이라 아직 릴리스되지 않았다.
+ponytail의 커밋은 `c982cd411abb`에서 `552acd5efd0a`(v4.13.0 뒤 2커밋, 2026-10-05)로
+올렸고, **담는 6종 중 4종의 파일이 바뀌었다.** 네 파일 모두 v4.13.0 태그와 같다 — 태그 뒤
+2커밋은 `skills/`를 건드리지 않았다.
 
-- `ponytail-review`·`ponytail-audit/SKILL.md` — 태그에 `reuse:`(이 저장소에 이미 있는
-  헬퍼·유틸을 다시 만든 것, 경로를 적는다)가 더해졌다(`446e4ad`, `003cd40`).
-  `ponytail-review`에는 그 예시 한 줄이 붙었고, 태그 목록 뒤에 빈 줄이 하나 더 생겼다(상류
-  원문 그대로 둔다). `ponytail-audit`에는 `delete:`를 내기 전에 테스트·픽스처·문자열
-  참조까지 저장소 전체를 grep하라는 문장도 붙었다(`6f7a570`).
-- `ponytail-debt/SKILL.md` — 원장 grep이 `/* ponytail: */` 블록 주석도 잡고 `.git`,
-  `node_modules`, `dist`, `build`를 건너뛴다(`b52dd9b`).
-- `ponytail-help/SKILL.md` — Codex에서 스킬을 부르는 표기가 `@ponytail`에서
-  `$ponytail`로 바뀌었다(`ad14110`).
-- **`ponytail/SKILL.md`와 `LICENSE`는 바이트 단위로 같다.** `orca_skill`이 배포하는 것은
-  `ponytail` 하나라 배포본에는 영향이 없다.
+- `ponytail-review`·`ponytail-audit/SKILL.md` — 지적 항목에 `1.`, `2.` 번호를 붙여
+  "2번과 5번 고쳐"라고 받을 수 있게 했다(`1b1a0c5`, #523, v4.12.0). `ponytail-review`는
+  예시 6줄에도 번호가 붙었다.
+- `ponytail-gain/SKILL.md` — 점수판 수치가 단발 벤치마크 중앙값(5태스크·3모델)에서
+  에이전트 벤치마크 평균(Haiku 4.5, 실제 FastAPI + React 저장소의 12태스크, 태스크당 4회)으로
+  바뀌었다(`8c0cccf`, #1029, v4.12.0).
+- `ponytail-help/SKILL.md` — Codex에서 스킬을 부르는 표기가 `$ponytail`에서 네임스페이스를
+  붙인 `$ponytail:ponytail`로 바뀌었다(`8cc7bec`, #1035, v4.13.0).
+- **`ponytail/SKILL.md`·`ponytail-debt/SKILL.md`와 `LICENSE`는 바이트 단위로 같다.**
+  `orca_skill`이 배포하는 것은 `ponytail` 하나라 배포본에는 영향이 없다.
 
-나머지 변경은 훅(`hooks/`)·opencode·pi·Hermes 플러그인, 벤치마크, 매니페스트 버전,
-`CONTRIBUTING.md`로, 이 브랜치가 담지 않는 경로다. Claude Code용 `SessionStart` 훅의
-statusline 제안 주입은 ZCode를 빼는 조건만 붙어 그대로 남았다.
+`skills/plugin.json`(Grok 마켓플레이스용 매니페스트, `e2b0437`·#913)이 새로 생겼지만 스킬이
+아니라 담지 않는다. 나머지 변경은 훅과 pi·Hermes·Qoder·Kimi 플러그인, `ponytail-mcp/`
+삭제, 번역 README, 테스트로, 이 브랜치가 담지 않는 경로다. Claude Code용 `SessionStart` 훅의
+statusline 제안 주입은 그대로 남았다. ZCode는 지원 호스트에서 빠졌고(`e807c55`),
+statusline이 플러그인 업데이트로 지워지는 경로를 가리키면 "STATUSLINE BROKEN" 안내를 넣는
+분기가 더해졌다(`c8f8f14`, #1033).
+
+그 전 갱신 `e3ba2aa6f1e6`(v4.10.0) → `c982cd411abb`(v4.10.3 뒤 10커밋)에서도 4종이
+바뀌었다 — `ponytail-review`·`-audit`에 `reuse:` 태그(`446e4ad`, `003cd40`), `-audit`의
+`delete:` 전 저장소 전체 grep(`6f7a570`), `-debt` 원장 grep의 블록 주석·빌드 폴더
+처리(`b52dd9b`), `-help`의 Codex 표기 `@ponytail` → `$ponytail`(`ad14110`).
 
 그 전 갱신 `356918eba965` → `e3ba2aa6f1e6`(v4.10.0)과 `2ed6c52c9d7e` → `356918eba965`는
 `skills/`와 `LICENSE`가 그대로였다(Cursor 훅 추가, README 로고 파일 이름).
@@ -151,8 +163,13 @@ superpowers 모두 커밋만 올렸고 파일 변경은 없다.
 
 **2026-10-04(v1.4.220) 재확인에서는 ponytail만 커밋이 올라갔고(위 `c982cd411abb`),
 superpowers(`8ca22dba9a`)와 karpathy(`2c606141936f`)는 HEAD가 그대로다.** 이번 갱신에서
-파일이 바뀐 것은 `orca_skill`이 배포하지 않는 ponytail 스킬뿐이고(위 목록), Orca는 커밋만
+파일이 바뀐 것은 `orca_skill`이 배포하지 않는 ponytail 스킬뿐이고, Orca는 커밋만
 올렸다.
+
+**2026-10-06(v1.4.221) 재확인에서도 ponytail만 커밋이 올라갔고(위 `552acd5efd0a`),
+superpowers(`8ca22dba9a`)와 karpathy(`2c606141936f`)는 HEAD가 그대로다.** 이번에도 파일이
+바뀐 것은 `orca_skill`이 배포하지 않는 ponytail 스킬뿐이다(위 목록). Orca는 v1.4.221 태그의
+`skills/` 트리가 `53899251`과 같아 기준 커밋을 올리지 않았다.
 
 `orca_skill`은 이 4종에 `Orca dispatch 컨텍스트` 절과 출처절을 덧붙여 쓴다. 무엇이
 덧붙었는지는 이 브랜치와 diff를 뜨면 그대로 나온다.
