@@ -24,13 +24,13 @@ Orca가 `orca skills install`로 설치하는 스킬 전부다. 8종이고, 이�
 것은 v1.4.220 릴리스(2026-10-04)까지 대조했다는 기록을 남기기 위해서다.
 
 **v1.4.219(`e705cac04a`)·v1.4.220(`a7927b28ce`)·v1.4.221(`9dd8812384`)·v1.4.222
-(`4bb6f2072b`)·v1.4.223(`5272afeda6`) 태그의 `skills/` 트리 해시는 `d606be3a`와 같다.** 즉
-v1.4.211부터 v1.4.223까지 릴리스된 앱이 설치하는 stub은 모두 같고, 이 브랜치의 stub과도
-같다. 릴리스 태그는 릴리스 브랜치라 `merge-base --is-ancestor`로는 판정할 수 없으므로 트리
-해시를 대조해 확인한다.
+(`4bb6f2072b`)·v1.4.223(`5272afeda6`)·v1.4.224(`2bb20586eb`) 태그의 `skills/` 트리 해시는
+`d606be3a`와 같다.** 즉 v1.4.211부터 v1.4.224까지 릴리스된 앱이 설치하는 stub은 모두 같고, 이
+브랜치의 stub과도 같다. 릴리스 태그는 릴리스 브랜치라 `merge-base --is-ancestor`로는 판정할
+수 없으므로 트리 해시를 대조해 확인한다.
 
 ```bash
-git rev-parse v1.4.223:skills   # 53899251:skills, d606be3a:skills 와 같다
+git rev-parse v1.4.224:skills   # 53899251:skills, d606be3a:skills 와 같다
 ```
 
 가이드(`skill-guides/`, 이 브랜치가 담지 않는다)는 이번 구간에 **릴리스됐다.** 앞 갱신에서
@@ -55,8 +55,15 @@ v1.4.222·v1.4.223의 `skill-guides/` 트리 해시가 같고(`fc5d9338`), v1.4.
 지정하는 것과 effort는 지원하지 않는다. 그래서 아래 "opencode 등 나머지 에이전트는
 `--model`을 거절한다"는 v1.4.221까지의 서술이다.
 
-v1.4.223 태그 뒤 상류 main에서는 `55eb48c137`(#26659)가 `orca-cli`의
-`references/automations.md`에 `--extra-agent-args` 한 줄을 더했고 아직 릴리스되지 않았다.
+앞 갱신에서 미릴리스라고 적은 `55eb48c137`(#26659)은 **v1.4.224에 릴리스됐다.** v1.4.224의
+`skill-guides/` 트리 해시는 `09cf394e`이고, v1.4.223과 다른 곳은 `orca-cli`의
+`references/automations.md`에 붙은 `--extra-agent-args` 한 줄이다. 오토메이션이 새로 실행할
+때마다 에이전트 기본 인자 뒤에 모델·effort 옵션(Claude는 `--add-dir`도)을 덧붙인다.
+`claude`·`codex`·`codebuddy`·`cursor`·`grok`·`omp`만 받고, `--reuse-session`과 함께 쓸 수 없다.
+
+v1.4.224 태그 뒤 상류 main에서는 `15717a4e53`(#26807)이 `orca-cli` 가이드에
+`Review and issue references` 절(`ORCA reference list|add|remove|find`, `worktree create
+--reference`)을 더했고 아직 릴리스되지 않았다.
 
 그 전 갱신 `d606be3a` → `6729f1b8`(v1.4.218)과 `dac82f61` → `d606be3a`(v1.4.216)도 파일
 변경 없이 커밋만 올렸다.
@@ -102,9 +109,9 @@ references/<file>.md`, `--references`, `--full`)이 새로 들어갔다. 이 플
 | 스킬 | 상류 | 커밋 | 라이선스 |
 |---|---|---|---|
 | `karpathy-guidelines` | `multica-ai/andrej-karpathy-skills` | `2c606141936f` | MIT |
-| `test-driven-development` | `obra/superpowers` | `8ca22dba9a` | MIT (Jesse Vincent) |
-| `systematic-debugging` | `obra/superpowers` | `8ca22dba9a` | MIT (Jesse Vincent) |
-| `verification-before-completion` | `obra/superpowers` | `8ca22dba9a` | MIT (Jesse Vincent) |
+| `test-driven-development` | `obra/superpowers` | `bb92a77741` | MIT (Jesse Vincent) |
+| `systematic-debugging` | `obra/superpowers` | `bb92a77741` | MIT (Jesse Vincent) |
+| `verification-before-completion` | `obra/superpowers` | `bb92a77741` | MIT (Jesse Vincent) |
 | `ponytail` 외 5종 | `DietrichGebert/ponytail` | `9cc65d03aa2d` | MIT (Dietrich Gebert) |
 
 ponytail의 커밋은 `552acd5efd0a`에서 `9cc65d03aa2d`(v5.1.0, 2026-10-08)로 올렸고, **담는
@@ -160,10 +167,23 @@ ponytail의 커밋은 `552acd5efd0a`에서 `9cc65d03aa2d`(v5.1.0, 2026-10-08)로
 그 전 갱신 `356918eba965` → `e3ba2aa6f1e6`(v4.10.0)과 `2ed6c52c9d7e` → `356918eba965`는
 `skills/`와 `LICENSE`가 그대로였다(Cursor 훅 추가, README 로고 파일 이름).
 
-superpowers의 커밋은 `5bf4e78011`(v6.4.1)에서 `8ca22dba9a`(v6.4.2, 2026-09-25)로 올렸지만
-**담는 3종과 `LICENSE`는 바이트 단위로 같다.** 그 사이 커밋은 릴리스 하나(#2384)뿐이고,
-바뀐 스킬은 `writing-plans`(`SKILL.md` 축약, `plan-document-reviewer-prompt.md` 삭제)라
-이 배포판이 담는 3종 밖이다. 나머지는 플러그인 매니페스트 버전과 릴리스 노트다.
+superpowers의 커밋은 `8ca22dba9a`(v6.4.2)에서 `bb92a77741`(v7.0.0, 2026-10-09)로 올렸고,
+**담는 3종 중 `systematic-debugging/SKILL.md` 한 파일이 바뀌었다.** 이번에는 `orca_skill`이
+배포하는 파일이다. 그 사이 커밋은 릴리스 하나(#2489)뿐이다.
+
+- `systematic-debugging/SKILL.md` — Phase 1의 다층 진단 예시(서명 ID가 각 층에 전달되는지
+  보는 예)가 확인하려던 비밀값을 로그에 찍던 두 줄을 고쳤다(#2375, #2380).
+  `${IDENTITY:+SET}${IDENTITY:-UNSET}`는 값이 있으면 `SET` 뒤에 값까지 출력했고,
+  `env | grep IDENTITY`도 값을 그대로 보여 줬다. 이제 `[ -n "${IDENTITY:-}" ]`와
+  `printenv IDENTITY >/dev/null`로 설정 여부만 출력한다.
+- `test-driven-development`·`verification-before-completion`과 `LICENSE`는 바이트 단위로 같다.
+
+v7.0.0의 나머지 변경(`brainstorming` 재작성, Antigravity 매니페스트, 훅의 Windows 수정,
+`sdd-workspace`·`task-done`·`requesting-code-review` 수정)은 이 배포판이 담는 3종 밖이다.
+
+그 전 갱신 `5bf4e78011`(v6.4.1) → `8ca22dba9a`(v6.4.2)에서는 담는 3종과 `LICENSE`가 바이트
+단위로 같았다. 바뀐 스킬은 `writing-plans`(`SKILL.md` 축약, `plan-document-reviewer-prompt.md`
+삭제)뿐이었다.
 
 그 전 갱신 `b36e0829c6d0` → `5bf4e78011`(v6.4.1)에서는 **담는 3종 중 2종의 파일이
 바뀌었다.**
@@ -204,6 +224,13 @@ superpowers(`8ca22dba9a`)와 karpathy(`2c606141936f`)는 HEAD가 그대로다.**
 superpowers(`8ca22dba9a`)와 karpathy(`2c606141936f`)는 HEAD가 그대로다.** 이번에는
 `orca_skill`이 배포하는 `ponytail/SKILL.md`가 바뀌었다(위 목록). Orca는 v1.4.222·v1.4.223
 태그의 `skills/` 트리가 `53899251`과 같아 기준 커밋을 올리지 않았다.
+
+**2026-10-10(v1.4.224) 재확인에서는 superpowers가 올라갔다(위 `bb92a77741`).** 이번에는
+`orca_skill`이 배포하는 `systematic-debugging/SKILL.md`가 바뀌었다. ponytail은 HEAD가
+`9b58c1ffb790`으로 4커밋 올라갔지만 README·배너 이미지·벤치마크 채점기만 바뀌어 담는 6종과
+`LICENSE`가 바이트 단위로 같으므로 기준 커밋을 `9cc65d03aa2d`로 둔다. karpathy
+(`2c606141936f`)는 HEAD가 그대로다. Orca는 v1.4.224 태그의 `skills/` 트리가 `53899251`과 같아
+기준 커밋을 올리지 않았다.
 
 `orca_skill`은 이 4종에 `Orca dispatch 컨텍스트` 절과 출처절을 덧붙여 쓴다. 무엇이
 덧붙었는지는 이 브랜치와 diff를 뜨면 그대로 나온다.
