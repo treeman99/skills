@@ -88,11 +88,11 @@ You MUST complete each phase before proceeding to the next.
    ```bash
    # Layer 1: Workflow
    echo "=== Secrets available in workflow: ==="
-   echo "IDENTITY: ${IDENTITY:+SET}${IDENTITY:-UNSET}"
+   echo "IDENTITY: $([ -n "${IDENTITY:-}" ] && echo SET || echo UNSET)"
 
    # Layer 2: Build script
    echo "=== Env vars in build script: ==="
-   env | grep IDENTITY || echo "IDENTITY not in environment"
+   printenv IDENTITY >/dev/null 2>&1 && echo "IDENTITY in environment" || echo "IDENTITY not in environment"
 
    # Layer 3: Signing script
    echo "=== Keychain state: ==="
@@ -322,8 +322,9 @@ TEST_CMD='pnpm vitest run' bash <skills-dir>/systematic-debugging/find-polluter.
 
 Orca 사내 배포판이 번들한 서드파티 스킬이다. **본문은 원문 그대로이고 위 `Orca dispatch 컨텍스트` 절과 이 절만 추가했다.**
 
-- 출처: `obra/superpowers` · `skills/systematic-debugging/` (커밋 `8ca22dba9a`, v6.4.2 — 이 스킬의 파일은 v6.4.1 `5bf4e78011`과 같다)
+- 출처: `obra/superpowers` · `skills/systematic-debugging/` (커밋 `bb92a77741`, v7.0.0)
 - 상류 재확인(2026-09-29, v6.4.2): `5bf4e78011` → `8ca22dba9a`에서 이 스킬의 파일은 바이트 단위로 같다. 그 릴리스(#2384)는 이 배포판이 담지 않는 `writing-plans`만 바꿨다.
+- 상류 갱신(2026-10-10, v7.0.0): `8ca22dba9a` → `bb92a77741`(#2489)에서 `SKILL.md`의 두 줄이 바뀌었다. Phase 1 "Gather Evidence in Multi-Component Systems" 예시가 확인하려던 서명 ID 값을 로그에 찍던 것을 고쳤다(#2375, #2380) — `${IDENTITY:+SET}${IDENTITY:-UNSET}`는 값이 있으면 `SET` 뒤에 값까지 냈고 `env | grep IDENTITY`도 값을 보여 줬다. 이제 `[ -n "${IDENTITY:-}" ]`와 `printenv IDENTITY >/dev/null`로 설정 여부만 낸다. 아래 수정 1~3건과 겹치지 않아 충돌 없이 머지됐고, 나머지 참조 문서와 `find-polluter.sh`의 상류 원문은 그대로다.
 - 저작권: Copyright (c) 2025 Jesse Vincent · 라이선스: MIT (이 디렉터리의 `LICENSE`)
 - 함께 설치되는 참조 문서: `root-cause-tracing.md`, `defense-in-depth.md`, `condition-based-waiting.md`, `condition-based-waiting-example.ts`, `find-polluter.sh`
 - 수정 1건: 본문의 스킬 참조에서 `superpowers:` 접두어를 뗐다(`superpowers:test-driven-development` → `test-driven-development`). 이 배포판은 그 네임스페이스로 설치되지 않기 때문이다.

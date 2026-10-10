@@ -179,9 +179,10 @@ orca orchestration send --type worker_done --outcome succeeded `
 
 Orca 사내 배포판이 번들한 서드파티 스킬이다. **본문은 원문 그대로이고 위 `Orca dispatch 컨텍스트` 절과 이 절만 추가했다.**
 
-- 출처: `obra/superpowers` · `skills/verification-before-completion/SKILL.md` (커밋 `8ca22dba9a`, v6.4.2 — 이 스킬의 파일은 v6.4.1 `5bf4e78011`과 같다)
+- 출처: `obra/superpowers` · `skills/verification-before-completion/SKILL.md` (커밋 `bb92a77741`, v7.0.0 — 이 스킬의 파일은 v6.4.1 `5bf4e78011`과 같다)
 - 상류 갱신(2026-09-21, v6.4.1): `b36e0829c6d0` → `5bf4e78011`에서 이 스킬의 파일은 바이트 단위로 같다. 같은 릴리스가 `test-driven-development`와 `systematic-debugging`은 건드렸다.
 - 상류 재확인(2026-09-29, v6.4.2): `5bf4e78011` → `8ca22dba9a`에서 이 스킬의 파일은 바이트 단위로 같다. 그 릴리스(#2384)는 이 배포판이 담지 않는 `writing-plans`만 바꿨다.
+- 상류 재확인(2026-10-10, v7.0.0): `8ca22dba9a` → `bb92a77741`(#2489)에서 이 스킬의 파일은 바이트 단위로 같다. 같은 릴리스가 담는 3종 중에서는 `systematic-debugging/SKILL.md`만 바꿨다.
 - 저작권: Copyright (c) 2025 Jesse Vincent · 라이선스: MIT (이 디렉터리의 `LICENSE`)
 - 원문 수정: 없음.
 - 네트워크: URL을 조회하지 않고 패키지를 설치하지 않는다. 실행하는 것은 사용자 저장소의 검증 명령(테스트·린트·빌드)뿐이다.

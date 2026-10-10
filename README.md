@@ -16,6 +16,19 @@ Orca orchestration과 충돌하는 스킬이 있어 판정 근거를 함께 적�
 
 ## 최근 변경
 
+### 2026-10-10 — `systematic-debugging`의 진단 예시가 비밀값을 찍지 않게 됐다
+
+상류 superpowers v7.0.0(`bb92a77741`)이 `systematic-debugging/SKILL.md`의 두 줄을 고쳤다. 이
+번들이 Orca v1.4.224용으로 대조하면서 받았다.
+
+| 항목 | 내용 |
+|---|---|
+| `systematic-debugging` 본문 | Phase 1 "Gather Evidence in Multi-Component Systems" 예시가 서명 ID가 각 층에 전달되는지 보면서 그 값까지 출력하던 것을, 설정 여부만 출력하게 바꿨다. 이 예시를 그대로 따라 한 워커가 CI·빌드 로그에 비밀값을 남길 수 있었다 |
+| 나머지 | `test-driven-development`·`verification-before-completion`은 그대로다. Orca v1.4.224는 stub이 v1.4.223과 같고, `orchestration`·`orca-cli`의 커스터마이징도 그대로 둔다 |
+
+**할 일.** `systematic-debugging` 폴더를 [PowerShell 스크립트](#powershell로-한-번에)로 다시
+복사한다. 그다음 에이전트를 재시작한다.
+
 ### 2026-10-09 — `ponytail`을 Ponytail 5(v5.1.0)로 올렸다
 
 상류 ponytail이 본문을 새로 썼다(`9cc65d03aa2d`). 이 번들이 Orca v1.4.223용으로 대조하면서
@@ -751,12 +764,14 @@ Share Skills 페인, `orca skills share` 명령)를 제거했으므로, 상류 d
 | `orca-cli` | `stablyai/orca` | `53899251` | 상류 저장소 라이선스 |
 | `karpathy-guidelines` | `multica-ai/andrej-karpathy-skills` | `2c606141936f` | MIT |
 | `ponytail` | `DietrichGebert/ponytail` | `9cc65d03aa2d` | MIT (Dietrich Gebert) |
-| `test-driven-development` | `obra/superpowers` | `8ca22dba9a` | MIT (Jesse Vincent) |
-| `systematic-debugging` | `obra/superpowers` | `8ca22dba9a` | MIT (Jesse Vincent) |
-| `verification-before-completion` | `obra/superpowers` | `8ca22dba9a` | MIT (Jesse Vincent) |
+| `test-driven-development` | `obra/superpowers` | `bb92a77741` | MIT (Jesse Vincent) |
+| `systematic-debugging` | `obra/superpowers` | `bb92a77741` | MIT (Jesse Vincent) |
+| `verification-before-completion` | `obra/superpowers` | `bb92a77741` | MIT (Jesse Vincent) |
 
-superpowers는 `8ca22dba9a`(v6.4.2)로 올렸지만 담는 3종은 v6.4.1(`5bf4e78011`)과 바이트
-단위로 같다 — v6.4.2는 `writing-plans`만 바꿨다. 그 v6.4.1에서 두 파일이 바뀌었다. `test-driven-development`는
+superpowers는 `bb92a77741`(v7.0.0)로 올렸고, 담는 3종 중 `systematic-debugging/SKILL.md`의
+두 줄만 바뀌었다 — Phase 1 진단 예시가 확인하려던 비밀값을 로그에 찍지 않게 됐다. 나머지
+둘은 v6.4.1(`5bf4e78011`)과 바이트 단위로 같다(v6.4.2는 `writing-plans`만 바꿨다). 그
+v6.4.1에서 두 파일이 바뀌었다. `test-driven-development`는
 GREEN 단계에 "other tests는 프로젝트 전체 스위트를 뜻하고, 태스크가 파일 하나만 지목했어도
 프로젝트 테스트 명령을 돌리며, 자기가 내지 않은 실패도 이름을 적어 보고한다"는 문단을
 받았다 — QUALITY CONTRACT 4번·6번과 같은 방향이라 규약은 그대로 두었다.
