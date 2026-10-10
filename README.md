@@ -16,6 +16,22 @@ Orca orchestration과 충돌하는 스킬이 있어 판정 근거를 함께 적�
 
 ## 최근 변경
 
+### 2026-10-10 — 보고서를 Orca 탭으로 띄우게 했다
+
+**증상.** 사내 Windows에서 `orchestration`으로 보고서를 만들게 하면 md를 쓴 뒤 "wmux가
+없다"며 띄우지 못했다.
+
+**원인.** Orca가 낸 오류가 아니다. wmux는 Orca와 무관한 Windows용 에이전트 멀티플렉서이고,
+사내 포크·상류 소스 어디에도 없다. Orca에는 `orca file open <경로>`가 있어 md를 렌더링된
+탭으로 여는데, 서비스 가이드와 이 번들 어디에도 그 명령이 없어 에이전트가 아는 다른 도구로
+갔다.
+
+**바뀐 것.** `Working files` 절에 "사용자가 보고서를 보려 하면 `ORCA file open <경로> --focus
+--json`으로 연다, Orca 밖 뷰어로 가지 않는다, 경로 앞에 `./`를 붙이지 않는다"를 넣었다.
+
+**할 일.** `orchestration` 폴더를 [PowerShell 스크립트](#powershell로-한-번에)로 다시 복사하고
+에이전트를 재시작한다. 같은 요청으로 보고서가 Orca 탭에 뜨는지 본다.
+
 ### 2026-10-10 — `systematic-debugging`의 진단 예시가 비밀값을 찍지 않게 됐다
 
 상류 superpowers v7.0.0(`bb92a77741`)이 `systematic-debugging/SKILL.md`의 두 줄을 고쳤다. 이
@@ -232,6 +248,11 @@ task id를 우선하는 이유는 코디네이터와 `worker_done` 페이로드�
   유일한 예외로 적어 두었는데, 그 절이 빠지면서 예외도 함께 사라졌었다.
 - **디스패치가 있으면 `--report-path`도 그 안을 가리킨다.** 코디네이터가 파일을 찾아
   헤매지 않고 장문 보고서를 여는 것이 그 플래그의 존재 이유다.
+- **보고서를 사용자에게 보여줄 때는 `orca file open`으로 Orca 탭에 연다**
+  (`orca file open .orca/artifacts/<이름>/report.md --focus --json`, Markdown이 렌더링된다).
+  wmux·tmux 같은 다른 멀티플렉서, OS `start`/`open`, 브라우저로 돌아가지 않는다. 경로는
+  워크트리 기준 상대 경로(앞에 `./`를 붙이면 `invalid_relative_path`로 거부된다)나 워크트리
+  안의 절대 경로다. 실패하면 다른 도구를 찾지 말고 오류와 경로를 보고한다.
 - **`.orca/`는 이미 Orca의 워크스페이스 네임스페이스다** — `.orca/drops`, `.orca/templates`,
   `.orca/browser-downloads`, `.orca/issue-command`. `.orca`를 ignore 하는 프로젝트라면
   이 파일들이 `git status`에서 항목 하나로 통째로 빠진다. 그 항목을 넣을지는 프로젝트
