@@ -752,7 +752,7 @@ Orca Settings의 스킬 설치·업데이트 버튼도 같은 `npx skills ...` �
 **description은 1024자를 넘기지 않는다.** Agent Skills 스펙의 상한은 1024자이고 Codex와
 Copilot CLI는 넘는 스킬을 **경고 없이 버린다**. opencode 1.18.26은 넘어도 그대로 로드했다
 (1038자이던 시절에 확인함). 이 번들은 `~/.claude/skills`처럼 다른 에이전트와 공유하는
-경로에 들어가므로, 상류를 반영할 때 description 길이를 함께 본다. 현재(`53899251`)는
+경로에 들어가므로, 상류를 반영할 때 description 길이를 함께 본다. 현재(`209ef942`)는
 `orchestration` 524자, `orca-cli` 587자다(YAML 접힘 뒤 기준, `orca-cli`는 아래 수정 반영
 후). 한때 1038자·1015자였지만 상류 `bba68b1b`가 압축했고, `12d744f2`가 Computer
 Use·Playwright 라우팅 문장을 빼면서 더 줄었다.
@@ -781,10 +781,10 @@ Share Skills 페인, `orca skills share` 명령)를 제거했으므로, 상류 d
 
 | 스킬 | 상류 | 커밋 | 라이선스 |
 |---|---|---|---|
-| `orchestration` | `stablyai/orca` | `53899251` | 상류 저장소 라이선스 |
-| `orca-cli` | `stablyai/orca` | `53899251` | 상류 저장소 라이선스 |
+| `orchestration` | `stablyai/orca` | `209ef942` | 상류 저장소 라이선스 |
+| `orca-cli` | `stablyai/orca` | `209ef942` | 상류 저장소 라이선스 |
 | `karpathy-guidelines` | `multica-ai/andrej-karpathy-skills` | `2c606141936f` | MIT |
-| `ponytail` | `DietrichGebert/ponytail` | `9cc65d03aa2d` | MIT (Dietrich Gebert) |
+| `ponytail` | `DietrichGebert/ponytail` | `84740e3d344b` | MIT (Dietrich Gebert) |
 | `test-driven-development` | `obra/superpowers` | `bb92a77741` | MIT (Jesse Vincent) |
 | `systematic-debugging` | `obra/superpowers` | `bb92a77741` | MIT (Jesse Vincent) |
 | `verification-before-completion` | `obra/superpowers` | `bb92a77741` | MIT (Jesse Vincent) |
