@@ -228,7 +228,7 @@ flowchart TD
 | Windows에서 opencode `worker-start` 리시트에 `submit: unverified`가 뜬다 | 정상이다 — ConPTY가 opencode의 제목 신호를 삼켜 Orca가 턴 시작을 관측하지 못한다. dispatch는 살아 있다 | `worker-read`에 워커가 스펙 파일을 읽는 출력이 있는지 |
 | 커스터마이징이 사라졌다 | `orca skills update`가 업스트림으로 덮었다 | `grep -c 'QUALITY CONTRACT'` |
 | 리뷰 보고서가 추측투성이다 | 규약 4를 명령 실행으로만 읽었다 | 발견 사항에 재현 근거가 있는지 |
-| 같은 태스크가 3번 실패하고 죽었다 | 환경 문제를 `failed`로 보고했다 | 실패 사유가 도구·권한·네트워크인지 |
+| 같은 태스크를 다시 시작해도 매번 같은 이유로 `failed`가 온다 | 환경 문제를 `failed`로 보고했다. 워커의 `failed`는 회로 차단기에 세지 않아 런타임이 반복을 멈추지 않는다 | 실패 사유가 도구·권한·네트워크인지 |
 | 병렬 워커가 서로의 변경을 덮었다 | 공유 파일을 각자 "가정 명시 후 진행"으로 고쳤다 | 두 `files-modified`에 같은 파일이 있는지 |
 | 거짓 보고를 뒤늦게 알았다 | `worker-release` 후에 확인했다 | release 전에 diff를 봤는지 |
 | 리팩터링인데 새 테스트를 만들었다 | 리팩터링 행 대신 기능 구현 행을 넣었다 | spec 2번 줄이 "새 테스트를 만들지 않는다"인지 |

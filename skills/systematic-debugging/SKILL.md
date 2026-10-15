@@ -299,7 +299,7 @@ orca orchestration send --type escalation \
   --task-id <task_id> --dispatch-id <dispatch_id> --json
 ```
 
-네 번째 수정을 임의로 시도하지 않는다. 이것은 Orca의 dispatch 회로 차단기와도 맞물린다: 하나의 태스크에서 연속 3회 실패하면 dispatch 컨텍스트가 차단되고 태스크가 `failed`로 기록된다. 본문의 3-fix 규칙을 지키는 것이 그 차단에 걸리지 않는 길이다.
+네 번째 수정을 임의로 시도하지 않는다. 워커 안에서 거듭하는 수정 시도는 Orca의 dispatch 회로 차단기(태스크당 3회)에 세지 않는다 — 차단기가 세는 것은 워커 프로세스 종료나 프롬프트 전달 실패 같은 디스패치 실패다. 런타임이 네 번째 시도를 막아 주지 않으므로 본문의 3-fix 규칙이 유일한 정지 장치다.
 
 **조사 단계에서 막히면 `ask`를 쓴다.** Phase 1~3에서 정보가 부족할 때(재현 조건, 의도된 동작, 접근 권한)는 추측하지 말고 묻는다:
 
@@ -330,5 +330,6 @@ Orca 사내 배포판이 번들한 서드파티 스킬이다. **본문은 원문
 - 수정 1건: 본문의 스킬 참조에서 `superpowers:` 접두어를 뗐다(`superpowers:test-driven-development` → `test-driven-development`). 이 배포판은 그 네임스페이스로 설치되지 않기 때문이다.
 - 수정 2건: `find-polluter.sh`의 실행 비트를 뗐고 호출 표기를 `bash ...`, 절대 경로로 바꿨다. `root-cause-tracing.md`의 참조도 맞췄다. **상류도 v6.4.1에서 같은 방향으로 한 걸음 왔다** — `root-cause-tracing.md`의 호출이 `./find-polluter.sh`에서 `bash ./find-polluter.sh`로 바뀌었다(2026-09-21 머지에서 충돌, 이 사본 유지). 상류가 고친 것은 실행 비트 없이도 돌게 하는 `bash` 접두뿐이고, 저장소 루트 실행·절대 경로·`TEST_CMD`·Windows bash 요구는 여전히 상류에 없다. 삭제 조건: 상류가 절대 경로 호출과 `TEST_CMD`까지 문서화하면 이 수정을 지우고 상류를 따른다.
 - 수정 3건: `find-polluter.sh`에 `TEST_CMD` 환경변수와 조기 중단 두 가지를 넣었다. 원문은 `npm test`를 하드코딩하고 실패를 `|| true`로 삼키기 때문에, npm 저장소가 아니거나 패턴이 하나도 매칭되지 않으면 아무것도 검사하지 않고 "No polluter found"라는 **거짓 성공**을 냈다. 이분 탐색 로직 자체는 그대로다.
+- `Orca dispatch 컨텍스트` 절 수정(2026-10-15): Phase 4.5 문단의 회로 차단기 문장을 바꿨다. 옛 문장은 "3-fix 규칙을 지키는 것이 그 차단에 걸리지 않는 길이다"였는데, 워커 안의 수정 시도와 워커의 `failed` 보고는 차단기에 세지 않는다 — 포크 `v1.4.224-samsungds`에서 차단기를 올리는 `failDispatch`의 호출은 워커 프로세스 종료, 프리앰블 전달 실패, 자동 코디네이터 루프가 감독 행 없는 Dispatch에서 받은 escalation뿐이다. 3-fix 규칙 자체는 그대로다. 근거와 삭제 조건은 `orchestration` 출처절 추가 8건에 있다.
 - 제외 5건: 원저자의 평가용 픽스처(`test-pressure-1~3.md`, `test-academic.md`)와 `CREATION-LOG.md`. 스킬 동작에 참조되지 않는다.
 - 네트워크: URL을 조회하지 않는다. `find-polluter.sh`는 `find`와 저장소의 테스트 명령만 실행한다.
