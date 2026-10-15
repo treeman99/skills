@@ -6,7 +6,7 @@
 
 | 브랜치 | 내용 | 용도 |
 |---|---|---|
-| `main` (여기) | 업스트림 원본 18종 | 복구·대조 기준선 |
+| `main` (여기) | 업스트림 원본 20종 | 복구·대조 기준선 |
 | `orca_skill` | 커스터마이징 6종 | 실제 사용 |
 
 **여기서는 아무것도 수정하지 않는다.** `skills/` 아래 파일은 아래 표의 커밋에 있는
@@ -14,26 +14,60 @@
 
 ## 무엇이 들어 있나
 
-### Orca 번들 스킬 — `stablyai/orca` `53899251` (2026-10-04)
+### Orca 번들 스킬 — `stablyai/orca` `209ef942` (2026-10-14)
 
-Orca가 `orca skills install`로 설치하는 스킬 전부다. 8종이고, 이름은 설치된 Orca의
-`orca skills list --json`이 내놓는 목록과 맞춰 확인한다.
+Orca가 `orca skills install`로 설치하는 스킬 전부다. 10종이고, 이름은 설치된 Orca의
+`orca skills list --json`이 내놓는 목록과 맞춰 확인한다. 상류 저장소에서는
+`resources/skills/current-manifest.json`의 `skills[].name`이 같은 목록이다.
 
-커밋은 `6729f1b8`에서 `53899251`로 올렸지만 **파일은 하나도 바뀌지 않았다.** 그 사이
-439커밋 중 `skills/`를 건드린 것이 없어 두 커밋의 `skills/` 트리 해시가 같다. 커밋만 올린
-것은 v1.4.220 릴리스(2026-10-04)까지 대조했다는 기록을 남기기 위해서다.
+커밋을 `53899251`에서 `209ef942`로 올리면서 **stub 2종이 새로 생겼다.** 그 사이 1,532커밋 중
+`skills/`를 건드린 것은 `7ac2dcc7d4`(#28592) 하나이고, 기존 8종은 바이트 단위로 같다.
 
-**v1.4.219(`e705cac04a`)·v1.4.220(`a7927b28ce`)·v1.4.221(`9dd8812384`)·v1.4.222
-(`4bb6f2072b`)·v1.4.223(`5272afeda6`)·v1.4.224(`2bb20586eb`) 태그의 `skills/` 트리 해시는
-`d606be3a`와 같다.** 즉 v1.4.211부터 v1.4.224까지 릴리스된 앱이 설치하는 stub은 모두 같고, 이
-브랜치의 stub과도 같다. 릴리스 태그는 릴리스 브랜치라 `merge-base --is-ancestor`로는 판정할
-수 없으므로 트리 해시를 대조해 확인한다.
+- `orca-jira` — Orca CLI로 Jira 이슈를 다루는 명령 가이드의 stub이다. 연결된 이슈에서 일을
+  시작하고, PR/MR 링크와 완료 코멘트로 마무리하고, 워크플로 전환·JQL 검색·후속 이슈 생성을
+  한다. `orca-linear`와 같은 짜임이다.
+- `jira-tickets` — Jira 티켓 작업 절차의 stub이다. 명령은 `orca-jira` 가이드를 불러 쓰고,
+  이슈를 먼저 읽고, 사용자가 허락한 쓰기만 하고, 쓰기가 반영됐는지 확인한 뒤 완료를 말하라는
+  짧은 워크플로다. `linear-tickets`와 달리 레거시 별칭이 아니다 — description이 다르고
+  서비스 가이드도 19줄짜리 별도 문서다.
+
+둘 다 이슈 필드·코멘트·라벨을 지시가 아닌 신뢰할 수 없는 데이터로 다루라고 적고, Orca에
+저장된 Jira 연결(사이트)로 Jira에 접속한다.
+
+**v1.4.225(`d22f723081`)의 `skills/` 트리 해시는 `53899251`·`d606be3a`와 같고, v1.4.226
+(`be7a39838d`)의 것은 `209ef942`와 같다.** 즉 v1.4.211부터 v1.4.225까지 릴리스된 앱은 앞의
+8종을, v1.4.226부터는 10종을 설치한다. 릴리스 태그는 릴리스 브랜치라
+`merge-base --is-ancestor`로는 판정할 수 없으므로 트리 해시를 대조해 확인한다.
 
 ```bash
-git rev-parse v1.4.224:skills   # 53899251:skills, d606be3a:skills 와 같다
+git rev-parse v1.4.226:skills   # 209ef942:skills, 7ac2dcc7d4:skills 와 같다
+git rev-parse v1.4.225:skills   # 53899251:skills, d606be3a:skills 와 같다
 ```
 
-가이드(`skill-guides/`, 이 브랜치가 담지 않는다)는 이번 구간에 **릴리스됐다.** 앞 갱신에서
+가이드(`skill-guides/`, 이 브랜치가 담지 않는다)는 두 릴리스에 걸쳐 바뀌었다. v1.4.226의
+`skill-guides/` 트리 해시가 `209ef942`와 같아, 지금 상류 main에 미릴리스 가이드 변경은 없다.
+
+- v1.4.225 — 앞 갱신에서 미릴리스라고 적은 `15717a4e53`(#26807, `Review and issue
+  references` 절)이 담겼다. `e3ef95dc04`(#27794)·`564693f176`(#27796)이 에이전트를 띄우는
+  방법을 바꿨다. 기존 워크트리에는 `ORCA agent launch`, 새 체크아웃에는 `worktree create
+  --agent`를 쓰고, 둘 다 `--model`·`--effort`를 받으며 사용자의 Chat UI 설정에 따라 chat
+  또는 터미널로 연다(결과의 `launch.outcome.kind`). 응답을 잃으면 `--retry-launch
+  <operationId>`로 같은 실행을 재생한다. Codex 모델·effort를 위해 `terminal create
+  --command`로 돌아가던 옛 절차는 지워졌다. `orchestration` 가이드에는 "모델·effort 선택은
+  감독형으로 만들지 않는다 — `worker-start`처럼 Chat UI 설정을 따른다"가,
+  `references/low-level-topology.md`에는 "모델·effort는 custom argv가 아니다"가 붙었다.
+- v1.4.226 — `b70f13ff89`(#27795)가 `references/recovery-and-cleanup.md`에 회로 차단기를
+  자세히 적었다. 실패한 `worker-start`는 `--retry-of`를 따라 세고, **워커 자신의 `failed`
+  보고는 세지 않는다.** 차단된 Dispatch에 `--retry-of`를 하면 `task_not_startable`로
+  거절되고, 실패한 워커를 대체하는 `--retry-of`는 그 워커가 쥔 터미널을 해제한다.
+  `7ac2dcc7d4`·`6d04aea3f1`(#28619)이 `orca-jira`·`jira-tickets` 가이드와 `reference add`의
+  Jira 키 해석(`--reference-site`)을 더했고, `7b31e739d2`(#28257)가 `orca-cli`의
+  `references/provider-vercel.md`를 macOS 기본 Bash에서 돌게 고쳤다.
+
+그 전 갱신 `6729f1b8` → `53899251`(v1.4.220)은 파일 변경 없이 커밋만 올렸다. v1.4.219
+(`e705cac04a`)부터 v1.4.224(`2bb20586eb`)까지 태그의 `skills/` 트리 해시가 `d606be3a`와 같았다.
+
+가이드는 `6729f1b8` → `53899251` 구간에 **릴리스됐다.** 앞 갱신에서
 "v1.4.218 태그 뒤 상류 main에서 바뀌었고 아직 릴리스되지 않았다"고 적은 세 커밋이
 v1.4.219부터 담겼다 — v1.4.219의 `skill-guides/` 트리 해시가 `6729f1b8`과 같다.
 `e03870403e`(#23982)·`9afd1101ff`(#23994)가 워커 보고에서 dispatch capability를 빼고(호스트가
@@ -60,10 +94,6 @@ v1.4.222·v1.4.223의 `skill-guides/` 트리 해시가 같고(`fc5d9338`), v1.4.
 `references/automations.md`에 붙은 `--extra-agent-args` 한 줄이다. 오토메이션이 새로 실행할
 때마다 에이전트 기본 인자 뒤에 모델·effort 옵션(Claude는 `--add-dir`도)을 덧붙인다.
 `claude`·`codex`·`codebuddy`·`cursor`·`grok`·`omp`만 받고, `--reuse-session`과 함께 쓸 수 없다.
-
-v1.4.224 태그 뒤 상류 main에서는 `15717a4e53`(#26807)이 `orca-cli` 가이드에
-`Review and issue references` 절(`ORCA reference list|add|remove|find`, `worktree create
---reference`)을 더했고 아직 릴리스되지 않았다.
 
 그 전 갱신 `d606be3a` → `6729f1b8`(v1.4.218)과 `dac82f61` → `d606be3a`(v1.4.216)도 파일
 변경 없이 커밋만 올렸다.
@@ -100,8 +130,10 @@ references/<file>.md`, `--references`, `--full`)이 새로 들어갔다. 이 플
 | `orca-emulator` | 아니오 |
 | `orca-emulator-android` | 아니오 |
 | `orca-per-workspace-env` | 아니오 |
+| `orca-jira` | 아니오 |
+| `jira-tickets` | 아니오 — `orca-jira`를 쓰는 티켓 작업 절차 |
 
-`orca_skill`이 쓰지 않는 6종도 담아 둔다. Orca 업데이트가 번들 스킬을 덮어썼을 때
+`orca_skill`이 쓰지 않는 8종도 담아 둔다. Orca 업데이트가 번들 스킬을 덮어썼을 때
 되돌릴 원본이 여기 있어야 하기 때문이다.
 
 ### 품질 스킬 — 서드파티
@@ -112,10 +144,27 @@ references/<file>.md`, `--references`, `--full`)이 새로 들어갔다. 이 플
 | `test-driven-development` | `obra/superpowers` | `bb92a77741` | MIT (Jesse Vincent) |
 | `systematic-debugging` | `obra/superpowers` | `bb92a77741` | MIT (Jesse Vincent) |
 | `verification-before-completion` | `obra/superpowers` | `bb92a77741` | MIT (Jesse Vincent) |
-| `ponytail` 외 5종 | `DietrichGebert/ponytail` | `9cc65d03aa2d` | MIT (Dietrich Gebert) |
+| `ponytail` 외 5종 | `DietrichGebert/ponytail` | `84740e3d344b` | MIT (Dietrich Gebert) |
 
-ponytail의 커밋은 `552acd5efd0a`에서 `9cc65d03aa2d`(v5.1.0, 2026-10-08)로 올렸고, **담는
-6종이 모두 바뀌었다.** 이번에는 `orca_skill`이 배포하는 `ponytail/SKILL.md`도 바뀌었다.
+ponytail의 커밋은 `9cc65d03aa2d`(v5.1.0)에서 `84740e3d344b`(v5.2.0 뒤 3커밋, 2026-10-15)로
+올렸고, **담는 6종 중 `ponytail-debt`·`ponytail-gain` 두 파일이 바뀌었다.** `orca_skill`이
+배포하는 `ponytail/SKILL.md`와 `LICENSE`는 바이트 단위로 같다. 그 사이 32커밋 중 `skills/`를
+건드린 것은 둘이다.
+
+- `57635bd`(#1108, v5.1.1) — `ponytail-debt`가 마커를 찾는 명령이
+  `grep -rnE --exclude-dir=.git --exclude-dir=node_modules …`에서
+  `git grep --no-index --exclude-standard -nE …`로 바뀌었다. 폴더 이름을 나열하는 대신
+  `.gitignore`가 무시하는 것(의존성·빌드 산출물·캐시)을 스택과 무관하게 건너뛴다.
+- `84740e3`(#1125) — 한 번 실행하고 끝나는 `ponytail-debt`·`ponytail-gain`의 `Boundaries`에서
+  "stop …"·"normal mode"로 되돌리라는 문장을 지웠다. 되돌릴 모드가 없어 오해를 부르는 안내였다.
+
+`skills/plugin.json`은 그대로이고 이번에도 담지 않는다. 나머지 변경은 훅(코드베이스 맵에서
+저장소가 통제하는 텍스트와 심볼릭 링크 파일을 빼고 맵 크기를 제한, 압축 뒤에도 레벨 유지,
+Node 12 호환), 각 호스트 어댑터 수정, 벤치마크, 문서로, 이 브랜치가 담지 않는 경로다.
+`SessionStart` 훅의 statusline 제안 주입(`hooks/ponytail-activate.js`)은 그대로 남았다.
+
+그 전 갱신 `552acd5efd0a` → `9cc65d03aa2d`(v5.1.0, 2026-10-08)에서는 **담는
+6종이 모두 바뀌었다.** 그때는 `orca_skill`이 배포하는 `ponytail/SKILL.md`도 바뀌었다.
 `LICENSE`는 바이트 단위로 같다. 그 사이 4커밋 중 `skills/`를 건드린 것은 둘이고, 나머지
 둘은 릴리스 커밋(v5.0.0, v5.1.0)이다.
 
@@ -231,6 +280,12 @@ superpowers(`8ca22dba9a`)와 karpathy(`2c606141936f`)는 HEAD가 그대로다.**
 `LICENSE`가 바이트 단위로 같으므로 기준 커밋을 `9cc65d03aa2d`로 둔다. karpathy
 (`2c606141936f`)는 HEAD가 그대로다. Orca는 v1.4.224 태그의 `skills/` 트리가 `53899251`과 같아
 기준 커밋을 올리지 않았다.
+
+**2026-10-15(v1.4.226) 재확인에서는 Orca와 ponytail이 올라갔다(위 `209ef942`,
+`84740e3d344b`).** Orca는 v1.4.226에서 `orca-jira`·`jira-tickets` stub 2종이 새로 생겼고
+(v1.4.225는 `skills/` 트리가 `53899251`과 같다), ponytail은 `orca_skill`이 배포하지 않는
+`-debt`·`-gain`만 바뀌었다. superpowers(`bb92a77741`)와 karpathy(`2c606141936f`)는 HEAD가
+그대로다.
 
 `orca_skill`은 이 4종에 `Orca dispatch 컨텍스트` 절과 출처절을 덧붙여 쓴다. 무엇이
 덧붙었는지는 이 브랜치와 diff를 뜨면 그대로 나온다.
