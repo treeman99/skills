@@ -16,6 +16,20 @@ Orca orchestration과 충돌하는 스킬이 있어 판정 근거를 함께 적�
 
 ## 최근 변경
 
+### 2026-10-18 — 핸드오프 경로에 `agent launch --prompt`를 더했다
+
+이 번들을 Orca v1.4.229용으로 대조하면서 고쳤다. v1.4.229가 설치하는 Orca 번들 스킬은
+v1.4.226과 같다.
+
+| 항목 | 내용 |
+|---|---|
+| `orchestration` 본문 | `Do not attach this to full handoffs`는 라이프사이클 프리앰블 없이 프롬프트만 넘기는 경로로 `worktree create --prompt`와 `terminal send`를 들었다. 사내 포크가 v1.4.226-samsungds부터 `agent launch`(기존 워크트리에 에이전트를 띄우는 명령)를 담았고, 그 `--prompt`도 같은 경우라 열거에 더했다. 규칙은 그대로다 — 전면 위임에는 규약을 붙이지 않는다 |
+| `ponytail` | 상류 v5.3.0이 frontmatter `argument-hint`에 `off`를 더했다. 본문은 그대로이고, 상류가 새로 낸 Claude Code band mod는 싣지 않는다 |
+| 나머지 | `orca-cli`와 superpowers·karpathy 스킬은 그대로다. 출처절에 재확인 기록만 붙었다 |
+
+**할 일.** `orchestration`·`ponytail` 두 폴더를 [PowerShell 스크립트](#powershell로-한-번에)로
+다시 복사하고 에이전트를 재시작한다.
+
 ### 2026-10-15 — 환경 예외(규약 6번)의 이유를 바로잡았다
 
 이 번들을 Orca v1.4.226용으로 대조하면서 찾았다.
@@ -747,8 +761,8 @@ Iron Law는 **주장보다 증거가 먼저**다. Gate Function 5단계를 통�
 규약을 spec에 인라인한 뒤 2번 슬롯을 치환한다. `orca skills get orchestration`이
 서비스하는 가이드에는 이 라우팅이 없으므로, 이 파일 밖에서 찾을 것이 아니다.
 
-`orca-cli`는 이 체인에 **들어가지 않는다.** `worktree create --prompt`와 `terminal send`는
-라이프사이클 프리앰블을 전달하지 않아 워커에게 `ask`나 `worker_done`을 보낼 대상이
+`orca-cli`는 이 체인에 **들어가지 않는다.** `worktree create --prompt`·`agent launch --prompt`와
+`terminal send`는 라이프사이클 프리앰블을 전달하지 않아 워커에게 `ask`나 `worker_done`을 보낼 대상이
 없다. 그래서 전면 위임에는 규약을 붙이지 않는다. 규약 블록 자체에도 같은 안전장치가
 있어서, `taskId`와 `dispatchId` 없이 이 블록을 받은 워커는 5·6번을 빼고 1~4번만 따른 뒤
 지시한 사람에게 직접 보고한다.
@@ -803,7 +817,7 @@ Share Skills 페인, `orca skills share` 명령)를 제거했으므로, 상류 d
 | `orchestration` | `stablyai/orca` | `209ef942` | 상류 저장소 라이선스 |
 | `orca-cli` | `stablyai/orca` | `209ef942` | 상류 저장소 라이선스 |
 | `karpathy-guidelines` | `multica-ai/andrej-karpathy-skills` | `2c606141936f` | MIT |
-| `ponytail` | `DietrichGebert/ponytail` | `84740e3d344b` | MIT (Dietrich Gebert) |
+| `ponytail` | `DietrichGebert/ponytail` | `09c434ab73ca` | MIT (Dietrich Gebert) |
 | `test-driven-development` | `obra/superpowers` | `bb92a77741` | MIT (Jesse Vincent) |
 | `systematic-debugging` | `obra/superpowers` | `bb92a77741` | MIT (Jesse Vincent) |
 | `verification-before-completion` | `obra/superpowers` | `bb92a77741` | MIT (Jesse Vincent) |
