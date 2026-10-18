@@ -35,13 +35,16 @@ Orca가 `orca skills install`로 설치하는 스킬 전부다. 10종이고, 이
 저장된 Jira 연결(사이트)로 Jira에 접속한다.
 
 **v1.4.225(`d22f723081`)의 `skills/` 트리 해시는 `53899251`·`d606be3a`와 같고, v1.4.226
-(`be7a39838d`)의 것은 `209ef942`와 같다.** 즉 v1.4.211부터 v1.4.225까지 릴리스된 앱은 앞의
-8종을, v1.4.226부터는 10종을 설치한다. 릴리스 태그는 릴리스 브랜치라
+(`be7a39838d`)·v1.4.228(`d4d37f5d8f`)·v1.4.229(`a0cd1644f3`)의 것은 `209ef942`와 같다.** 즉
+v1.4.211부터 v1.4.225까지 릴리스된 앱은 앞의 8종을, v1.4.226부터는 10종을 설치한다.
+**예외는 v1.4.227(`f51e82c4c2`)이다.** 2026-10-09의 상류 main(`65580c5315`, v1.4.225보다
+앞)에서 갈라진 릴리스라 `7ac2dcc7d4`를 담지 않았고, `skills/` 트리 해시가 `53899251`과 같다 —
+Jira stub이 없는 8종을 설치한다. 릴리스 태그는 릴리스 브랜치라
 `merge-base --is-ancestor`로는 판정할 수 없으므로 트리 해시를 대조해 확인한다.
 
 ```bash
-git rev-parse v1.4.226:skills   # 209ef942:skills, 7ac2dcc7d4:skills 와 같다
-git rev-parse v1.4.225:skills   # 53899251:skills, d606be3a:skills 와 같다
+git rev-parse v1.4.229:skills   # 209ef942:skills, 7ac2dcc7d4:skills 와 같다(v1.4.226·v1.4.228도)
+git rev-parse v1.4.227:skills   # 53899251:skills, d606be3a:skills 와 같다(v1.4.225도)
 ```
 
 가이드(`skill-guides/`, 이 브랜치가 담지 않는다)는 두 릴리스에 걸쳐 바뀌었다. v1.4.226의
@@ -63,6 +66,16 @@ git rev-parse v1.4.225:skills   # 53899251:skills, d606be3a:skills 와 같다
   `7ac2dcc7d4`·`6d04aea3f1`(#28619)이 `orca-jira`·`jira-tickets` 가이드와 `reference add`의
   Jira 키 해석(`--reference-site`)을 더했고, `7b31e739d2`(#28257)가 `orca-cli`의
   `references/provider-vercel.md`를 macOS 기본 Bash에서 돌게 고쳤다.
+
+v1.4.228·v1.4.229의 `skill-guides/` 트리 해시는 같고(`25a5cade`), v1.4.226과 다른 곳은
+`orca-cli` 두 곳이다. `0fac887dbc`(#28023)가 `orca-cli.md` 터미널 규칙에 "페어링된 서버에는 창이
+없다 — `terminal switch --environment <name>`이 이 머신의 데스크톱 앱을 그 서버의 터미널로
+옮기고, 그 서버를 보여 주는 데스크톱이 없으면 `navigated: false`를 낸다"를 더했고,
+`ebef2ea99c`(#29090)가 `references/publishing.md`에 "이미 발행한 `--bundle-name`으로 다시
+공유하면 그 패키지에 새 버전이 붙는다, `agent_skill_bundle_name_taken`이면 재시도하지 말고
+다른 이름을 묻는다"를 더했다. `orchestration` 가이드는 그대로다. v1.4.229 태그 뒤 상류
+main에서는 `21e3d76576`(#30003)이 `orca-linear`·`linear-tickets` 가이드에 Linear 코멘트
+수정·삭제 명령을 더했고 아직 릴리스되지 않았다.
 
 그 전 갱신 `6729f1b8` → `53899251`(v1.4.220)은 파일 변경 없이 커밋만 올렸다. v1.4.219
 (`e705cac04a`)부터 v1.4.224(`2bb20586eb`)까지 태그의 `skills/` 트리 해시가 `d606be3a`와 같았다.
@@ -144,12 +157,35 @@ references/<file>.md`, `--references`, `--full`)이 새로 들어갔다. 이 플
 | `test-driven-development` | `obra/superpowers` | `bb92a77741` | MIT (Jesse Vincent) |
 | `systematic-debugging` | `obra/superpowers` | `bb92a77741` | MIT (Jesse Vincent) |
 | `verification-before-completion` | `obra/superpowers` | `bb92a77741` | MIT (Jesse Vincent) |
-| `ponytail` 외 5종 | `DietrichGebert/ponytail` | `84740e3d344b` | MIT (Dietrich Gebert) |
+| `ponytail` 외 5종 | `DietrichGebert/ponytail` | `09c434ab73ca` | MIT (Dietrich Gebert) |
 
-ponytail의 커밋은 `9cc65d03aa2d`(v5.1.0)에서 `84740e3d344b`(v5.2.0 뒤 3커밋, 2026-10-15)로
-올렸고, **담는 6종 중 `ponytail-debt`·`ponytail-gain` 두 파일이 바뀌었다.** `orca_skill`이
-배포하는 `ponytail/SKILL.md`와 `LICENSE`는 바이트 단위로 같다. 그 사이 32커밋 중 `skills/`를
-건드린 것은 둘이다.
+ponytail의 커밋은 `84740e3d344b`에서 `09c434ab73ca`(v5.3.2 뒤 8커밋, 2026-10-18)로 올렸고,
+**담는 6종 중 `ponytail`·`ponytail-help` 두 파일이 바뀌었다.** 이번에는 `orca_skill`이
+배포하는 `ponytail/SKILL.md`도 바뀌었지만 frontmatter 한 줄이다. `LICENSE`는 바이트 단위로
+같다. 그 사이 16커밋 중 `skills/`를 건드린 것은 둘이다.
+
+- `df9e899`(#1138, v5.3.0) — Claude Code 프롬프트 위에 **band**(현재 태스크의 비용·토큰·
+  에이전트 시간·재사용·테스트와 레벨·리뷰 버튼)를, 로컬 HTML **board**(프로젝트 전체의 비용·
+  시간·토큰 추이와 세션 목록, 공유 카드)를 띄우는 Claude Code mod를 더했다. 스킬 쪽 변경은
+  둘이다. `ponytail/SKILL.md` frontmatter의 `argument-hint`가 `"[lite|full|ultra]"`에서
+  `"[lite|full|ultra|off]"`가 됐고(본문과 `description`은 그대로), `ponytail-help`에
+  `## Band (Claude Code)` 절이 생겼다 — `/ponytail band`로 band를 숨기고 다시 띄우며,
+  `on`·`off`로 직접 정한다.
+- `ca88b4f`(#1152, v5.3.2) — 같은 절에 `/ponytail band import`(지난 Claude Code 세션의 비용·
+  에이전트 시간·토큰을 board에 더한다) 한 줄이 붙었다.
+
+`skills/plugin.json`은 그대로이고 이번에도 담지 않는다. band는 `hooks/band/`(TypeScript
+mod)와 `hooks/claude-band.json`으로 실리고, 태스크마다 `~/.config/ponytail/band/`에 CSV 한 줄과
+`board.html`을 쓴다. 기본값으로는 아무것도 기기 밖으로 나가지 않지만, 사용자가 mod 옵션에
+`webhookUrl`을 넣으면 태스크 행을 그 주소로 보낸다(`register.tsx`의 `$.http.fetch`). 나머지
+변경은 band 수정, 훅(Windows의 느린 node 시작에 맞춘 15초 훅 제한과 코드베이스 맵 3초, 큰 저장소의
+`git ls-files` 버퍼), Codex 아이콘, CI, 벤치마크, 문서로, 이 브랜치가 담지 않는 경로다.
+`SessionStart` 훅의 statusline 제안 주입(`hooks/ponytail-activate.js`)은 그대로 남았다.
+
+그 전 갱신 `9cc65d03aa2d`(v5.1.0) → `84740e3d344b`(v5.2.0 뒤 3커밋, 2026-10-15)에서는
+**담는 6종 중 `ponytail-debt`·`ponytail-gain` 두 파일이 바뀌었다.** 그때 `orca_skill`이
+배포하는 `ponytail/SKILL.md`와 `LICENSE`는 바이트 단위로 같았다. 그 사이 32커밋 중
+`skills/`를 건드린 것은 둘이다.
 
 - `57635bd`(#1108, v5.1.1) — `ponytail-debt`가 마커를 찾는 명령이
   `grep -rnE --exclude-dir=.git --exclude-dir=node_modules …`에서
@@ -158,7 +194,7 @@ ponytail의 커밋은 `9cc65d03aa2d`(v5.1.0)에서 `84740e3d344b`(v5.2.0 뒤 3�
 - `84740e3`(#1125) — 한 번 실행하고 끝나는 `ponytail-debt`·`ponytail-gain`의 `Boundaries`에서
   "stop …"·"normal mode"로 되돌리라는 문장을 지웠다. 되돌릴 모드가 없어 오해를 부르는 안내였다.
 
-`skills/plugin.json`은 그대로이고 이번에도 담지 않는다. 나머지 변경은 훅(코드베이스 맵에서
+`skills/plugin.json`은 그대로였고 그때도 담지 않았다. 나머지 변경은 훅(코드베이스 맵에서
 저장소가 통제하는 텍스트와 심볼릭 링크 파일을 빼고 맵 크기를 제한, 압축 뒤에도 레벨 유지,
 Node 12 호환), 각 호스트 어댑터 수정, 벤치마크, 문서로, 이 브랜치가 담지 않는 경로다.
 `SessionStart` 훅의 statusline 제안 주입(`hooks/ponytail-activate.js`)은 그대로 남았다.
@@ -286,6 +322,12 @@ superpowers(`8ca22dba9a`)와 karpathy(`2c606141936f`)는 HEAD가 그대로다.**
 (v1.4.225는 `skills/` 트리가 `53899251`과 같다), ponytail은 `orca_skill`이 배포하지 않는
 `-debt`·`-gain`만 바뀌었다. superpowers(`bb92a77741`)와 karpathy(`2c606141936f`)는 HEAD가
 그대로다.
+
+**2026-10-18(v1.4.229) 재확인에서는 ponytail만 올라갔다(위 `09c434ab73ca`).** 이번에는
+`orca_skill`이 배포하는 `ponytail/SKILL.md`의 frontmatter `argument-hint` 한 줄이 바뀌었다.
+Orca는 v1.4.228·v1.4.229 태그의 `skills/` 트리가 `209ef942`와 같아 기준 커밋을 올리지 않았다
+(v1.4.227은 옛 main에서 갈라진 릴리스라 `53899251`과 같다). superpowers(`bb92a77741`)와
+karpathy(`2c606141936f`)는 HEAD가 그대로다.
 
 `orca_skill`은 이 4종에 `Orca dispatch 컨텍스트` 절과 출처절을 덧붙여 쓴다. 무엇이
 덧붙었는지는 이 브랜치와 diff를 뜨면 그대로 나온다.
